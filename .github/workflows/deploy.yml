@@ -1,0 +1,38 @@
+name: Deploy SimIntBot Admin
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_KEY }}
+          passphrase: ${{ secrets.VPS_PASSPHRASE }}
+          script: |
+            # Définir les variables en fonction de la branche
+            if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+              ENV="prod"
+              DIR="/var/www/SIMINTBOT/simintbot_admin"
+            else
+              ENV="dev"
+              DIR="/var/www/SIMINTBOT/simintbot_devadmin"
+            fi
+            
+            echo "Deployment started for $ENV environment..."
+            
+            # Naviguer et mettre à jour le code
+            cd $DIR
+            git pull origin ${{ github.ref_name }}
+            
+            # Rendre le script exécutable et le lancer
+            chmod +x deploy.sh
+            ./deploy.sh $ENV

@@ -1,0 +1,14 @@
+{
+  "Common": {
+    "welcome": "Welcome to SimIntBot Admin",
+    "description": "Administration Panel",
+    "architecture_ready": "Architecture ready."
+  },
+  "Auth": {
+    "login": "Login",
+    "logout": "Logout"
+  },
+  "Error": {
+    "generic": "An error occurred"
+  }
+}

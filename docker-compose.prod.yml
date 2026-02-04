@@ -1,0 +1,13 @@
+services:
+  simintbot-admin-app-prod:
+    container_name: simintbot-admin-app-prod
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "3003:3000"
+    restart: always
+    env_file:
+      - .env.local
