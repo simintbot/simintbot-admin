@@ -1,16 +1,18 @@
 "use client";
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Users, Video, Settings,
   ChevronDown, ChevronUp, X, LogOut
 } from 'lucide-react';
 import { useMobileSidebar } from './MobileSidebarContext';
+import apiClient from '@/lib/api/client';
 
 // Composant pour le contenu de la sidebar
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isInterviewOpen, setIsInterviewOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
@@ -36,6 +38,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       setIsOpen: setIsInterviewOpen,
       subItems: [
         { name: 'Décor', href: '/interview/decor' },
+        { name: 'Secteurs d\'activités', href: '/interview/sectors' },
         { name: 'Jobs', href: '/interview/jobs' },
         { name: 'Paramètres', href: '/interview/settings' }
       ]
@@ -58,6 +61,20 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     if (onNavigate) {
       onNavigate();
     }
+  };
+
+  const handleLogout = () => {
+    const ok = confirm('Êtes-vous sûr de vouloir vous déconnecter ?');
+    if (!ok) return;
+
+    try {
+      apiClient.setToken(null);
+    } catch (e) {
+      // ignore
+    }
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    router.replace('/login');
   };
 
   return (
@@ -173,7 +190,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
       {/* Footer avec bouton déconnexion */}
       <div className="p-4 mt-auto border-t border-white/20">
-        <button className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-all">
+        <button onClick={handleLogout} className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-all">
           <LogOut size={18} strokeWidth={1.5} />
           <span className="text-[13px]">Déconnexion</span>
         </button>

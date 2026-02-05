@@ -2,18 +2,7 @@
 
 import apiClient from '../api/client';
 import { Decor, DecorFormData, DecorFilters, ApiResponse } from '../types';
-
-// ============ DONNÉES MOCKÉES (à remplacer par appels API) ============
-let mockDecors: Decor[] = [
-  { id: '1', name: 'Bureau moderne', country: 'FR', image: '/img/decor-1.jpg', isActive: true, createdAt: '2025-01-15' },
-  { id: '2', name: 'Salle de réunion', country: 'FR', image: '/img/decor-2.jpg', isActive: true, createdAt: '2025-01-16' },
-  { id: '3', name: 'Open Space Tech', country: 'US', image: '/img/decor-3.jpg', isActive: true, createdAt: '2025-01-17' },
-  { id: '4', name: 'Startup Loft', country: 'US', image: '/img/decor-4.jpg', isActive: false, createdAt: '2025-01-18' },
-  { id: '5', name: 'Corporate Office', country: 'GB', image: '/img/decor-5.jpg', isActive: true, createdAt: '2025-01-19' },
-  { id: '6', name: 'Coworking Space', country: 'DE', image: '/img/decor-6.jpg', isActive: true, createdAt: '2025-01-20' },
-  { id: '7', name: 'Bureau Élégant', country: 'FR', image: '/img/decor-7.jpg', isActive: true, createdAt: '2025-01-21' },
-  { id: '8', name: 'Salle de Conférence', country: 'ES', image: '/img/decor-8.jpg', isActive: true, createdAt: '2025-01-22' },
-];
+import interviewApi from '../api/services/interview.service';
 
 // Pays disponibles
 export const COUNTRIES = [
@@ -28,141 +17,224 @@ export const COUNTRIES = [
   { code: 'BE', name: 'Belgique' },
 ];
 
-// Flag pour utiliser les données mockées ou l'API réelle
-const USE_MOCK_DATA = true;
-
 // ============ SERVICE ============
 export const decorService = {
+  // Normalize image URL returned by API to an absolute URL usable in <img src>
+  _resolveImageUrl(url?: string): string {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    const apiBase = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/api\/v1\/?$/,'');
+    if (!apiBase) return url;
+    return apiBase + (url.startsWith('/') ? '' : '/') + url;
+  },
   /**
    * Récupérer la liste des décors avec filtres
    */
   async getDecors(filters?: DecorFilters): Promise<Decor[]> {
-    if (USE_MOCK_DATA) {
-      let filtered = [...mockDecors];
-      
-      if (filters?.search) {
-        const search = filters.search.toLowerCase();
-        filtered = filtered.filter(decor => 
-          decor.name.toLowerCase().includes(search)
-        );
-      }
-      
-      if (filters?.country && filters.country !== 'all') {
-        filtered = filtered.filter(decor => decor.country === filters.country);
-      }
-      
-      if (filters?.isActive !== undefined) {
-        filtered = filtered.filter(decor => decor.isActive === filters.isActive);
-      }
-      
-      return filtered;
-    }
-    
-    return apiClient.get<Decor[]>('/decors', {
-      params: {
-        search: filters?.search,
-        country: filters?.country,
-        isActive: filters?.isActive,
-      },
+    const assets = await interviewApi.listAssets({
+      asset_type: 'background',
+      country_code: filters?.country && filters.country !== 'all' ? filters?.country : undefined,
+      is_active: filters?.isActive === undefined ? null : filters?.isActive,
+      search: filters?.search,
     });
+
+    console.log('[decorService.getDecors] API response:', assets);
+
+    const list = Array.isArray(assets) ? assets : (assets && (assets as any).data && Array.isArray((assets as any).data) ? (assets as any).data : []);
+    console.log('[decorService.getDecors] Parsed list:', list);
+
+    return list.map((a: any) => ({
+      id: a.id,
+      name: a.name,
+      country: a.country_code,
+      image: this._resolveImageUrl(a.image_url),
+      isActive: a.is_active,
+      createdAt: a.created_at,
+      updatedAt: a.updated_at,
+    }));
   },
 
   /**
    * Récupérer un décor par ID
    */
   async getDecorById(id: string): Promise<Decor> {
-    if (USE_MOCK_DATA) {
-      const decor = mockDecors.find(d => d.id === id);
-      if (!decor) {
-        throw new Error('Décor non trouvé');
-      }
-      return decor;
-    }
-    
-    return apiClient.get<Decor>(`/decors/${id}`);
+    const res = await apiClient.get<any>(`/interviews/assets/${id}`);
+    const payload = (res && (res as any).data) ? (res as any).data : res;
+    return {
+      id: payload.id,
+      name: payload.name,
+      country: payload.country_code,
+      image: (decorService as any)._resolveImageUrl ? (decorService as any)._resolveImageUrl(payload.image_url) : payload.image_url,
+      isActive: payload.is_active,
+      createdAt: payload.created_at,
+      updatedAt: payload.updated_at,
+    };
   },
 
   /**
    * Créer un nouveau décor
    */
   async createDecor(data: DecorFormData): Promise<Decor> {
-    if (USE_MOCK_DATA) {
-      const newDecor: Decor = {
-        id: Date.now().toString(),
-        ...data,
-        isActive: true,
-        createdAt: new Date().toISOString().split('T')[0],
-      };
-      mockDecors.push(newDecor);
-      return newDecor;
+    const imageFile = (data.image instanceof File) ? data.image : undefined;
+    if (!imageFile) {
+      throw new Error('Image file is required');
     }
-    
-    return apiClient.post<Decor>('/decors', data);
+
+    const res = await interviewApi.createAsset({
+      type: data.type ?? 'background',
+      name: data.name,
+      country_code: data.country,
+      is_active: data.isActive === undefined ? true : !!data.isActive,
+      image: imageFile,
+    });
+
+    const payload = (res && (res as any).data) ? (res as any).data : res;
+
+    return {
+      id: payload.id,
+      name: payload.name,
+      country: payload.country_code,
+      image: (decorService as any)._resolveImageUrl ? (decorService as any)._resolveImageUrl(payload.image_url) : payload.image_url,
+      isActive: payload.is_active,
+      createdAt: payload.created_at,
+      updatedAt: payload.updated_at,
+    };
   },
 
   /**
    * Mettre à jour un décor
+   * L'API utilise PATCH avec multipart/form-data
    */
   async updateDecor(id: string, data: Partial<DecorFormData>): Promise<Decor> {
-    if (USE_MOCK_DATA) {
-      const index = mockDecors.findIndex(d => d.id === id);
-      if (index === -1) {
-        throw new Error('Décor non trouvé');
-      }
-      mockDecors[index] = { 
-        ...mockDecors[index], 
-        ...data,
-        updatedAt: new Date().toISOString().split('T')[0],
-      };
-      return mockDecors[index];
-    }
+    // Build FormData for PATCH request
+    const formData = new FormData();
     
-    return apiClient.put<Decor>(`/decors/${id}`, data);
+    // Add fields if provided
+    if (data.name !== undefined && data.name !== '') {
+      formData.append('name', data.name);
+    }
+    if (data.country !== undefined && data.country !== '') {
+      formData.append('country_code', data.country);
+    }
+    if ((data as any).isActive !== undefined) {
+      formData.append('is_active', String((data as any).isActive));
+    }
+    if ((data as any).type !== undefined) {
+      formData.append('type', (data as any).type);
+    }
+    // Add image if it's a File
+    if (data.image instanceof File) {
+      formData.append('image', data.image);
+    }
+
+    // Use fetch directly for multipart PATCH
+    const url = `/api/proxy/interviews/assets/${id}`;
+    const headers: HeadersInit = {
+      'Accept': 'application/json',
+    };
+    
+    // Get token from apiClient
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers,
+      body: formData,
+    });
+
+    const text = await response.text();
+    let res: any = null;
+    try {
+      res = text ? JSON.parse(text) : null;
+    } catch (e) {
+      res = text;
+    }
+
+    if (!response.ok) {
+      throw new Error(res?.message || res?.detail?.[0]?.msg || `Error ${response.status}`);
+    }
+
+    const payload = (res && res.data) ? res.data : res;
+    return {
+      id: payload.id,
+      name: payload.name,
+      country: payload.country_code,
+      image: this._resolveImageUrl(payload.image_url),
+      isActive: payload.is_active,
+      createdAt: payload.created_at,
+      updatedAt: payload.updated_at,
+    };
   },
 
   /**
    * Activer/Désactiver un décor
+   * Utilise PATCH avec multipart/form-data
    */
-  async toggleDecorStatus(id: string): Promise<Decor> {
-    if (USE_MOCK_DATA) {
-      const index = mockDecors.findIndex(d => d.id === id);
-      if (index === -1) {
-        throw new Error('Décor non trouvé');
-      }
-      mockDecors[index].isActive = !mockDecors[index].isActive;
-      return mockDecors[index];
+  async toggleDecorStatus(id: string, currentIsActive?: boolean): Promise<Decor> {
+    // If currentIsActive is not provided, fetch current asset first
+    let newStatus: boolean;
+    if (currentIsActive !== undefined) {
+      newStatus = !currentIsActive;
+    } else {
+      const current = await this.getDecorById(id);
+      newStatus = !current.isActive;
     }
     
-    return apiClient.patch<Decor>(`/decors/${id}/toggle-status`);
+    // Build FormData for PATCH request
+    const formData = new FormData();
+    formData.append('is_active', String(newStatus));
+
+    const url = `/api/proxy/interviews/assets/${id}`;
+    const headers: HeadersInit = {
+      'Accept': 'application/json',
+    };
+    
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers,
+      body: formData,
+    });
+
+    const text = await response.text();
+    let res: any = null;
+    try {
+      res = text ? JSON.parse(text) : null;
+    } catch (e) {
+      res = text;
+    }
+
+    if (!response.ok) {
+      throw new Error(res?.message || res?.detail?.[0]?.msg || `Error ${response.status}`);
+    }
+
+    const payload = (res && res.data) ? res.data : res;
+    return {
+      id: payload.id,
+      name: payload.name,
+      country: payload.country_code,
+      image: this._resolveImageUrl(payload.image_url),
+      isActive: payload.is_active,
+      createdAt: payload.created_at,
+      updatedAt: payload.updated_at,
+    };
   },
 
   /**
    * Supprimer un décor
    */
   async deleteDecor(id: string): Promise<void> {
-    if (USE_MOCK_DATA) {
-      const index = mockDecors.findIndex(d => d.id === id);
-      if (index === -1) {
-        throw new Error('Décor non trouvé');
-      }
-      mockDecors.splice(index, 1);
-      return;
-    }
-    
-    return apiClient.delete(`/decors/${id}`);
+    await apiClient.delete(`/interviews/assets/${id}`);
   },
 
-  /**
-   * Upload d'image pour un décor
-   */
-  async uploadImage(file: File): Promise<{ url: string }> {
-    if (USE_MOCK_DATA) {
-      // Simulation d'upload
-      return { url: `/img/decor-${Date.now()}.jpg` };
-    }
-    
-    return apiClient.upload<{ url: string }>('/decors/upload', file, 'image');
-  },
+
 
   /**
    * Récupérer la liste des pays

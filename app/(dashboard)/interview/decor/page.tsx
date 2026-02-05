@@ -1,5 +1,9 @@
 "use client";
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { ApiError } from '@/lib/api/client';
+import authService from '@/lib/api/services/auth.service';
+import apiClient from '@/lib/api/client';
 import { Search, Filter, Plus, MoreVertical, Edit, Trash2, Eye, EyeOff, X, Upload, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { decorService, COUNTRIES } from '@/lib/services/decor.service';
 import { Decor, DecorFormData } from '@/lib/types';
@@ -12,12 +16,35 @@ export default function DecorPage() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDecor, setEditingDecor] = useState<Decor | null>(null);
-  const [formData, setFormData] = useState<DecorFormData>({ name: '', country: 'FR', image: '' });
+  const [formData, setFormData] = useState<DecorFormData>({ name: '', country: 'FR', image: null, type: 'background', isActive: true });
   const [saving, setSaving] = useState(false);
+  const router = useRouter();
+
+  const getErrorMessage = (error: unknown) => {
+    if (error instanceof ApiError) {
+      return error.body?.message ?? error.message ?? String(error);
+    }
+    if (error && typeof error === 'object' && 'message' in (error as any)) {
+      return (error as any).message;
+    }
+    return String(error ?? 'Erreur inconnue');
+  };
 
   // Charger les décors
   const loadDecors = useCallback(async () => {
     try {
+      // Ensure apiClient has current token
+      try {
+        const tk = localStorage.getItem('access_token');
+        if (!tk) {
+          authService.clearAuth();
+          router.replace('/login');
+          return;
+        }
+        apiClient.setToken(tk);
+      } catch (e) {
+        // ignore
+      }
       setLoading(true);
       const data = await decorService.getDecors({
         search: searchQuery || undefined,
@@ -26,6 +53,14 @@ export default function DecorPage() {
       setDecors(data);
     } catch (error) {
       console.error('Erreur lors du chargement des décors:', error);
+      const msg = getErrorMessage(error);
+      alert(msg);
+      if (error instanceof ApiError) {
+        if (error.status === 401 || String(msg).toLowerCase().includes('jeton') || String(msg).toLowerCase().includes('token')) {
+          authService.clearAuth();
+          router.replace('/login');
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -36,16 +71,15 @@ export default function DecorPage() {
   }, [loadDecors]);
 
   // Toggle statut
-  const handleToggleStatus = async (decorId: string) => {
+  const handleToggleStatus = async (decor: Decor) => {
     try {
-      await decorService.toggleDecorStatus(decorId);
-      setDecors(decors.map(decor => 
-        decor.id === decorId 
-          ? { ...decor, isActive: !decor.isActive }
-          : decor
+      const updated = await decorService.toggleDecorStatus(decor.id, decor.isActive);
+      setDecors(decors.map(d => 
+        d.id === decor.id ? updated : d
       ));
     } catch (error) {
       console.error('Erreur lors du changement de statut:', error);
+      alert(getErrorMessage(error));
     }
     setOpenMenuId(null);
   };
@@ -53,14 +87,14 @@ export default function DecorPage() {
   // Ouvrir modal création
   const openCreateModal = () => {
     setEditingDecor(null);
-    setFormData({ name: '', country: 'FR', image: '' });
+    setFormData({ name: '', country: 'FR', image: null, type: 'background', isActive: true });
     setIsModalOpen(true);
   };
 
   // Ouvrir modal édition
   const openEditModal = (decor: Decor) => {
     setEditingDecor(decor);
-    setFormData({ name: decor.name, country: decor.country, image: decor.image });
+    setFormData({ name: decor.name, country: decor.country, image: decor.image, type: 'background', isActive: decor.isActive });
     setIsModalOpen(true);
     setOpenMenuId(null);
   };
@@ -157,9 +191,13 @@ export default function DecorPage() {
           <div key={decor.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden group">
             {/* Image */}
             <div className="relative h-48 bg-gray-100">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <ImageIcon size={48} className="text-gray-300" />
-              </div>
+              {decor.image ? (
+                <img src={decor.image} alt={decor.name} className="absolute inset-0 w-full h-full object-cover" />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <ImageIcon size={48} className="text-gray-300" />
+                </div>
+              )}
               {/* Overlay au hover */}
               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
                 <button 
@@ -169,7 +207,7 @@ export default function DecorPage() {
                   <Edit size={16} />
                 </button>
                 <button 
-                  onClick={() => handleToggleStatus(decor.id)}
+                  onClick={() => handleToggleStatus(decor)}
                   className="p-2 bg-white rounded-full hover:bg-gray-100 transition-colors"
                 >
                   {decor.isActive ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -213,7 +251,7 @@ export default function DecorPage() {
                         <Edit size={14} /> Modifier
                       </button>
                       <button 
-                        onClick={() => handleToggleStatus(decor.id)}
+                        onClick={() => handleToggleStatus(decor)}
                         className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 w-full"
                       >
                         {decor.isActive ? <EyeOff size={14} /> : <Eye size={14} />}
@@ -286,11 +324,47 @@ export default function DecorPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Image
                 </label>
-                <div className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center hover:border-[#0D7BFF] transition-colors cursor-pointer">
-                  <Upload size={32} className="text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500">Cliquez pour uploader une image</p>
-                  <p className="text-xs text-gray-400 mt-1">PNG, JPG jusqu&apos;à 5MB</p>
-                </div>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/webp"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setFormData({ ...formData, image: file });
+                    }
+                  }}
+                  className="hidden"
+                  id="decor-image-upload"
+                />
+                <label 
+                  htmlFor="decor-image-upload"
+                  className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center hover:border-[#0D7BFF] transition-colors cursor-pointer block"
+                >
+                  {formData.image ? (
+                    <div className="space-y-2">
+                      {formData.image instanceof File ? (
+                        <img 
+                          src={URL.createObjectURL(formData.image)} 
+                          alt="Preview" 
+                          className="max-h-32 mx-auto rounded-lg object-cover"
+                        />
+                      ) : typeof formData.image === 'string' && formData.image ? (
+                        <img 
+                          src={formData.image} 
+                          alt="Current" 
+                          className="max-h-32 mx-auto rounded-lg object-cover"
+                        />
+                      ) : null}
+                      <p className="text-sm text-[#0D7BFF]">Cliquez pour changer l&apos;image</p>
+                    </div>
+                  ) : (
+                    <>
+                      <Upload size={32} className="text-gray-400 mx-auto mb-2" />
+                      <p className="text-sm text-gray-500">Cliquez pour uploader une image</p>
+                      <p className="text-xs text-gray-400 mt-1">PNG, JPG jusqu&apos;à 5MB</p>
+                    </>
+                  )}
+                </label>
               </div>
 
               <div className="flex gap-3 pt-4">

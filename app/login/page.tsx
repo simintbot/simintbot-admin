@@ -1,9 +1,9 @@
 "use client";
 import React, { useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import apiClient, { ApiError } from '../../lib/api/client';
+import { login as authLogin, resetPassword as authResetPassword } from '../../lib/api/services/auth.service';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -12,9 +12,11 @@ export default function LoginPage() {
     email: '',
     password: ''
   });
+  const [serverMessage, setServerMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (serverMessage) setServerMessage(null);
   };
 
   const isFormValid = formData.email?.trim() !== '' && formData.password?.trim() !== '';
@@ -24,16 +26,55 @@ export default function LoginPage() {
     setIsLoading(true);
     
     try {
-      // TODO: Implémenter l'appel API de connexion admin
-      console.log('Login attempt:', formData);
-      
-      // Simulation d'un délai de connexion
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Redirection vers le dashboard admin
+      const payload = await authLogin(formData);
+
+      if (!payload || !(payload as any).access_token) {
+        const msg = (payload && (payload as any).message) || 'Login failed';
+        setServerMessage({ type: 'error', text: msg });
+        return;
+      }
+
+      const accessToken = (payload as any).access_token;
+      const refreshToken = (payload as any).refresh_token;
+
+      apiClient.setToken(accessToken);
+      localStorage.setItem('access_token', accessToken);
+      if (refreshToken) localStorage.setItem('refresh_token', refreshToken);
+
       router.push('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
+      if (error instanceof ApiError) {
+        const body = error.body;
+        if (body?.message) setServerMessage({ type: 'error', text: body.message });
+        else if (body?.detail) setServerMessage({ type: 'error', text: JSON.stringify(body.detail) });
+        else setServerMessage({ type: 'error', text: error.message });
+      } else {
+        setServerMessage({ type: 'error', text: error?.message || 'Erreur de connexion' });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    const confirmReset = confirm("Réinitialiser/créer le compte administrateur basé sur ADMIN_EMAIL ?");
+    if (!confirmReset) return;
+
+    setIsLoading(true);
+    try {
+      const res = await authResetPassword();
+      const message = res?.message ?? (res?.data && res.data.message) ?? 'Réinitialisation envoyée';
+      setServerMessage({ type: 'success', text: message });
+    } catch (error: any) {
+      console.error('Reset error:', error);
+      if (error instanceof ApiError) {
+        const body = error.body;
+        const msg = body?.message ?? JSON.stringify(body ?? error.message);
+        setServerMessage({ type: 'error', text: msg });
+      } else {
+        setServerMessage({ type: 'error', text: error?.message || 'Erreur lors de la réinitialisation' });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -110,11 +151,22 @@ export default function LoginPage() {
             </button>
           </form>
 
+          {serverMessage && (
+            <div className={`mt-4 max-w-md mx-auto p-3 rounded-lg ${serverMessage.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+              {serverMessage.text}
+            </div>
+          )}
+
           {/* Lien mot de passe oublié */}
           <div className="text-center mt-6">
-            <Link href="/forgot-password" className="text-[#0D7BFF] text-sm hover:underline">
+            <button
+              type="button"
+              onClick={handleResetPassword}
+              disabled={isLoading}
+              className="text-[#0D7BFF] text-sm hover:underline"
+            >
               Mot de passe oublié ?
-            </Link>
+            </button>
           </div>
         </div>
 

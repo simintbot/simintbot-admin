@@ -71,7 +71,9 @@ export interface Decor {
 export interface DecorFormData {
   name: string;
   country: string;
-  image: string;
+  image: File | string | null;
+  type?: string; // asset type, e.g. 'background'
+  isActive?: boolean;
 }
 
 // ============ JOBS / FICHES MÉTIERS ============
@@ -104,6 +106,20 @@ export interface JobFormData {
   currency: string;
   language: string;
   is_template: boolean;
+}
+
+// ============ SECTEURS D'ACTIVITÉS ============
+export interface Sector {
+  id: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+}
+
+export interface SectorFormData {
+  name: string;
+  description?: string;
+  isActive: boolean;
 }
 
 // ============ API RESPONSES ============
@@ -140,4 +156,9 @@ export interface JobFilters {
   sector?: string;
   language?: string;
   is_template?: boolean;
+}
+
+export interface SectorFilters {
+  skip?: number;
+  limit?: number;
 }

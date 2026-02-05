@@ -1,6 +1,20 @@
 // Configuration du client API
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+// Use local proxy to avoid CORS issues with external APIs (like ngrok)
+const EXTERNAL_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+const API_BASE_URL = typeof window !== 'undefined' ? '/api/proxy' : EXTERNAL_API_URL;
+
+export class ApiError extends Error {
+  status: number;
+  body: any;
+
+  constructor(status: number, body: any, message?: string) {
+    super(message || (body && body.message) || `API Error: ${status}`);
+    this.name = 'ApiError';
+    this.status = status;
+    this.body = body;
+  }
+}
 
 interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;
@@ -19,9 +33,7 @@ class ApiClient {
   }
 
   private getHeaders(): HeadersInit {
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-    };
+    const headers: HeadersInit = {};
 
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;
@@ -31,17 +43,58 @@ class ApiClient {
   }
 
   private buildUrl(endpoint: string, params?: Record<string, string | number | boolean | undefined>): string {
-    const url = new URL(`${this.baseUrl}${endpoint}`);
+    // Build the full URL
+    let fullUrl = `${this.baseUrl}${endpoint}`;
     
+    // Add query parameters
     if (params) {
+      const searchParams = new URLSearchParams();
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined && value !== '') {
-          url.searchParams.append(key, String(value));
+          searchParams.append(key, String(value));
         }
       });
+      const queryString = searchParams.toString();
+      if (queryString) {
+        fullUrl += `?${queryString}`;
+      }
     }
 
-    return url.toString();
+    return fullUrl;
+  }
+
+  private async handleResponse(response: Response) {
+    const text = await response.text();
+    let data: any = null;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch (e) {
+      data = text;
+    }
+
+    if (!response.ok) {
+      // If the token is invalid or expired, clear local tokens and redirect to login (client-side only)
+      if (response.status === 401) {
+        try {
+          this.token = null;
+        } catch (e) {
+          // ignore
+        }
+        try {
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            // Redirect user to login to re-authenticate
+            window.location.replace('/login');
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+      throw new ApiError(response.status, data, response.statusText);
+    }
+
+    return data;
   }
 
   async get<T>(endpoint: string, options?: RequestOptions): Promise<T> {
@@ -53,62 +106,46 @@ class ApiClient {
       ...options,
     });
 
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
-    }
-
-    return response.json();
+    return this.handleResponse(response);
   }
 
   async post<T>(endpoint: string, data?: unknown, options?: RequestOptions): Promise<T> {
     const url = this.buildUrl(endpoint, options?.params);
-    
+    const headers = { ...this.getHeaders(), 'Content-Type': 'application/json' } as HeadersInit;
     const response = await fetch(url, {
       method: 'POST',
-      headers: this.getHeaders(),
+      headers,
       body: data ? JSON.stringify(data) : undefined,
       ...options,
     });
 
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
-    }
-
-    return response.json();
+    return this.handleResponse(response);
   }
 
   async put<T>(endpoint: string, data?: unknown, options?: RequestOptions): Promise<T> {
     const url = this.buildUrl(endpoint, options?.params);
-    
+    const headers = { ...this.getHeaders(), 'Content-Type': 'application/json' } as HeadersInit;
     const response = await fetch(url, {
       method: 'PUT',
-      headers: this.getHeaders(),
+      headers,
       body: data ? JSON.stringify(data) : undefined,
       ...options,
     });
 
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
-    }
-
-    return response.json();
+    return this.handleResponse(response);
   }
 
   async patch<T>(endpoint: string, data?: unknown, options?: RequestOptions): Promise<T> {
     const url = this.buildUrl(endpoint, options?.params);
-    
+    const headers = { ...this.getHeaders(), 'Content-Type': 'application/json' } as HeadersInit;
     const response = await fetch(url, {
       method: 'PATCH',
-      headers: this.getHeaders(),
+      headers,
       body: data ? JSON.stringify(data) : undefined,
       ...options,
     });
 
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
-    }
-
-    return response.json();
+    return this.handleResponse(response);
   }
 
   async delete<T>(endpoint: string, options?: RequestOptions): Promise<T> {
@@ -120,34 +157,46 @@ class ApiClient {
       ...options,
     });
 
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
-    }
-
-    return response.json();
+    return this.handleResponse(response);
   }
 
   // Upload de fichiers
-  async upload<T>(endpoint: string, file: File, fieldName: string = 'file'): Promise<T> {
+  async upload<T>(endpoint: string, file: File, fieldName: string = 'file', fields?: Record<string, string | Blob>, method: 'POST' | 'PUT' | 'PATCH' = 'POST'): Promise<T> {
     const formData = new FormData();
     formData.append(fieldName, file);
 
-    const headers: HeadersInit = {};
+    if (fields) {
+      Object.entries(fields).forEach(([key, value]) => {
+        formData.append(key, value as any);
+      });
+    }
+    const headers: HeadersInit = {
+      'Accept': 'application/json',
+    };
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
+    const url = this.buildUrl(endpoint);
 
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      method: 'POST',
+    const response = await fetch(url, {
+      method,
       headers,
       body: formData,
     });
 
-    if (!response.ok) {
-      throw new Error(`Upload Error: ${response.status} ${response.statusText}`);
+    const text = await response.text();
+    let data: any = null;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch (e) {
+      data = text;
     }
 
-    return response.json();
+    if (!response.ok) {
+      throw new ApiError(response.status, data, response.statusText);
+    }
+
+    return data;
   }
 }
 
