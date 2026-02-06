@@ -1,7 +1,7 @@
 // Configuration du client API
 
 const API_BASE_URL = typeof window !== 'undefined' 
-  ?  `${(process.env.NEXT_PUBLIC_API_URL || '').split('/')[0]}/api/proxy` 
+  ?  `${(process.env.API_URL || '')}/api/proxy` 
   : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
 export class ApiError extends Error {
