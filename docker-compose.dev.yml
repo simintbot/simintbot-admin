@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - API_URL=https://devapi.simint-bot.com/api/v1
     ports:
       - "3004:3000"
