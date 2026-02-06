@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import apiClient, { ApiError } from '../../../lib/api/client';
 import { login as authLogin, resetPassword as authResetPassword } from '../../../lib/api/services/auth.service';
+import { settingsService } from '../../../lib/services/settings.service';
 import { Modal } from '@/components/ui/Modal';
 
 export default function LoginPage() {
@@ -49,6 +50,13 @@ export default function LoginPage() {
       apiClient.setToken(accessToken);
       localStorage.setItem('access_token', accessToken);
       if (refreshToken) localStorage.setItem('refresh_token', refreshToken);
+
+      try {
+        await settingsService.initDefaults();
+      } catch (err) {
+        console.error('Failed to init defaults:', err);
+        // On continue même si l'initialisation échoue
+      }
 
       toast.success('Connexion réussie');
       router.push('/dashboard');

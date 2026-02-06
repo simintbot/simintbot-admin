@@ -29,5 +29,9 @@ export const settingsService = {
       // Assuming creating a new setting (like a new voice) is via POST to /settings
       // Adjust if your API differs
       return await apiClient.post<{ data: SettingItem }>(BASE_PATH, data);
+  },
+
+  initDefaults: async () => {
+    return await apiClient.post(`${BASE_PATH}/init-defaults`, {});
   }
 };
