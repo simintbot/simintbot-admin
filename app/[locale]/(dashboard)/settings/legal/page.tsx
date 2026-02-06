@@ -347,7 +347,7 @@ export default function LegalSettingsPage() {
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
                                 className="w-full p-3 border border-gray-300 rounded-xl outline-none focus:border-[#0D7BFF] focus:ring-2 focus:ring-[#0D7BFF]/20 transition-all font-medium text-lg placeholder:font-normal"
-                                placeholder={t('labels.title_placeholder', { title: docTypes.find(d => d.slug === selectedSlug)?.label })}
+                                placeholder={t('labels.title_placeholder', { title: docTypes.find(d => d.slug === selectedSlug)?.label || '' })}
                                 required
                             />
                         </div>

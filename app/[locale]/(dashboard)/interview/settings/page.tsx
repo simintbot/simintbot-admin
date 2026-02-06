@@ -59,7 +59,8 @@ export default function InterviewSettingsPage() {
             return t('labels.complement_lang', { lang });
         }
 
-        if (friendlyNames[key]) return friendlyNames[key];
+        const names = friendlyNames as Record<string, string>;
+        if (names[key]) return names[key];
 
         const parts = key.split('.');
         const cleanKey = parts.length > 1 ? parts.slice(1).join(' ') : parts[0];
@@ -95,7 +96,7 @@ export default function InterviewSettingsPage() {
 
     sortedSettings.forEach(item => {
             const group = item.key.split('.')[0];
-            const groupKey = groupConfig[group] ? group : 'other';
+            const groupKey = (groupConfig as Record<string, any>)[group] ? group : 'other';
             if (groupKey === 'other') return;
 
             if (!groups[groupKey]) groups[groupKey] = [];
@@ -369,7 +370,7 @@ export default function InterviewSettingsPage() {
 
       <div className="space-y-8">
         {Object.entries(groupedSettings).map(([groupKey, items]) => {
-                    const config = groupConfig[groupKey] || { label: t('groups.other'), icon: SettingsIcon };
+                    const config = (groupConfig as Record<string, any>)[groupKey] || { label: t('groups.other'), icon: SettingsIcon };
           const Icon = config.icon;
 
           return (
