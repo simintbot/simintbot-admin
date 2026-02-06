@@ -19,7 +19,7 @@ interface Interview {
   job: string;
   duration: string;
   score: number | null;
-  status: 'completed' | 'scheduled' | 'cancelled';
+  status: 'completed' | 'scheduled' | 'cancelled' | 'in_progress';
   description?: string;
   feedback?: string;
 }

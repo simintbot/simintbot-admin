@@ -81,7 +81,7 @@ export interface InterviewSession {
   duration_minutes: number;
   language_code: string;
   recruiter_name: string;
-  status: 'completed' | 'in_progress' | 'cancelled';
+  status: 'completed' | 'in_progress' | 'cancelled' | 'scheduled';
   started_at: string;
   ended_at: string | null;
   created_at: string;

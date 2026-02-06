@@ -29,7 +29,8 @@ export default function GeneralSettingsPage() {
   }), [t]);
 
   const getLabel = React.useCallback((key: string) => {
-    if (friendlyNames[key]) return friendlyNames[key];
+    const names = friendlyNames as Record<string, string>;
+    if (names[key]) return names[key];
     const parts = key.split('.');
     const cleanKey = parts.length > 1 ? parts.slice(1).join(' ') : parts[0];
     return cleanKey
