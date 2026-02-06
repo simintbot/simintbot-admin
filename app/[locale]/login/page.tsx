@@ -175,7 +175,7 @@ export default function LoginPage() {
               disabled={isLoading}
               className="text-[#0D7BFF] text-sm hover:underline"
             >
-              Envoyez la réinitialisation du mot de passe.
+              Envoyez la réinitialisation du mot de passe
             </button>
           </div>
         </div>
