@@ -15,75 +15,59 @@ import {
 import { settingsService, SettingItem } from '@/lib/services/settings.service';
 import toast from 'react-hot-toast';
 import { Modal } from '@/components/ui/Modal';
+import { useTranslations } from 'next-intl';
 
-// Helper to group settings nicely
-const GROUP_CONFIG: Record<string, { label: string; icon: any }> = {
-  'hume': { label: 'Voix & IA (Hume)', icon: Mic },
-  'interview': { label: 'Configuration Entretien', icon: Clock },
-  'prompt': { label: 'Stratégie & Prompts', icon: Terminal },
-  'report': { label: 'Rapports & Analyse', icon: FileText },
-};
-
-// Mapping for friendly names
-const FRIENDLY_NAMES: Record<string, string> = {
-    'hume.apikey': 'Clé API Hume',
-    'hume.secret': 'Secret Hume',
-    'hume.configId': 'ID de configuration Hume',
-    'interview.max_duration': 'Durée maximale (sec)',
-    'prompt.system_template': 'Template Système (Prompt)',
-    'prompt.strategy': 'Stratégie d\'entretien',
-    'recruiter_names': 'Noms des recruteurs (JSON)',
-};
-
-const getLabel = (key: string) => {
-    // Dynamic keys
-    if (key.includes('hume.voice.')) {
-        const lang = key.split('.').pop()?.toUpperCase() || '';
-        return `Voix IA (${lang})`;
-    }
-    if (key.includes('interview.complement.')) {
-        const lang = key.split('.').pop()?.toUpperCase() || '';
-        return `Complément d'entretien (${lang})`;
-    }
-
-    if (FRIENDLY_NAMES[key]) return FRIENDLY_NAMES[key];
-    
-    // Fallback
-    const parts = key.split('.');
-    const cleanKey = parts.length > 1 ? parts.slice(1).join(' ') : parts[0];
-    return cleanKey
-        .split(/[._]/)
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-};
-
-function getGroupAndSubkey(key: string): { group: string; subkey: string } {
-  const parts = key.split('.');
-  const group = parts[0];
-  return { 
-    group: GROUP_CONFIG[group] ? group : 'other', 
-    subkey: parts.slice(1).join('.') 
-  };
-}
-
-
-const SUPPORTED_LANGUAGES = [
-    { code: 'en', label: 'Anglais (English)' },
-    { code: 'fr', label: 'Français' },
-    { code: 'es', label: 'Espagnol (Español)' },
-    { code: 'de', label: 'Allemand (Deutsch)' },
-    { code: 'it', label: 'Italien (Italiano)' },
-    { code: 'pt', label: 'Portugais (Português)' },
-    { code: 'zh', label: 'Chinois (Chinese)' },
-    { code: 'ja', label: 'Japonais (Japanese)' },
-    { code: 'ko', label: 'Coréen (Korean)' },
-    { code: 'ru', label: 'Russe (Russian)' },
-];
+const SUPPORTED_LANGUAGE_CODES = ['en', 'fr', 'es', 'de', 'it', 'pt', 'zh', 'ja', 'ko', 'ru'];
 
 export default function InterviewSettingsPage() {
+    const t = useTranslations('InterviewSettings');
   const [settings, setSettings] = useState<SettingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingKey, setSavingKey] = useState<string | null>(null);
+
+    const groupConfig = React.useMemo(() => ({
+        hume: { label: t('groups.hume'), icon: Mic },
+        interview: { label: t('groups.interview'), icon: Clock },
+        prompt: { label: t('groups.prompt'), icon: Terminal },
+        report: { label: t('groups.report'), icon: FileText },
+    }), [t]);
+
+    const friendlyNames = React.useMemo(() => ({
+        'hume.apikey': t('labels.hume_api_key'),
+        'hume.secret': t('labels.hume_secret'),
+        'hume.configId': t('labels.hume_config_id'),
+        'interview.max_duration': t('labels.interview_max_duration'),
+        'prompt.system_template': t('labels.prompt_system_template'),
+        'prompt.strategy': t('labels.prompt_strategy'),
+        'recruiter_names': t('labels.recruiter_names'),
+    }), [t]);
+
+    const supportedLanguages = React.useMemo(() => (
+        SUPPORTED_LANGUAGE_CODES.map((code) => ({
+            code,
+            label: t(`languages.${code}`),
+        }))
+    ), [t]);
+
+    const getLabel = React.useCallback((key: string) => {
+        if (key.includes('hume.voice.')) {
+            const lang = key.split('.').pop()?.toUpperCase() || '';
+            return t('labels.voice_lang', { lang });
+        }
+        if (key.includes('interview.complement.')) {
+            const lang = key.split('.').pop()?.toUpperCase() || '';
+            return t('labels.complement_lang', { lang });
+        }
+
+        if (friendlyNames[key]) return friendlyNames[key];
+
+        const parts = key.split('.');
+        const cleanKey = parts.length > 1 ? parts.slice(1).join(' ') : parts[0];
+        return cleanKey
+            .split(/[._]/)
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+    }, [friendlyNames, t]);
 
   // Voice Modal State
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
@@ -110,15 +94,16 @@ export default function InterviewSettingsPage() {
     const sortedSettings = [...settings].sort((a, b) => a.key.localeCompare(b.key));
 
     sortedSettings.forEach(item => {
-      const { group } = getGroupAndSubkey(item.key);
-      if (group === 'other') return; 
+            const group = item.key.split('.')[0];
+            const groupKey = groupConfig[group] ? group : 'other';
+            if (groupKey === 'other') return;
 
-      if (!groups[group]) groups[group] = [];
-      groups[group].push(item);
+            if (!groups[groupKey]) groups[groupKey] = [];
+            groups[groupKey].push(item);
     });
 
     return groups;
-  }, [settings]);
+    }, [settings, groupConfig]);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -129,13 +114,13 @@ export default function InterviewSettingsPage() {
         }
       } catch (error) {
         console.error('Error fetching settings:', error);
-        toast.error('Impossible de charger les paramètres');
+                toast.error(t('errors.load_failed'));
       } finally {
         setLoading(false);
       }
     };
     fetchSettings();
-  }, []);
+    }, [t]);
 
   // Sync modal state with settings when opening or changing selection
   useEffect(() => {
@@ -180,10 +165,10 @@ export default function InterviewSettingsPage() {
       setSettings(prev => prev.map(item => 
         item.key === key ? { ...item, value: newValue } : item
       ));
-      toast.success('Paramètre mis à jour');
+            toast.success(t('success.updated'));
     } catch (error) {
       console.error('Error updating setting:', error);
-      toast.error('Erreur lors de la mise à jour');
+            toast.error(t('errors.update_failed'));
     } finally {
       setSavingKey(null);
     }
@@ -191,7 +176,7 @@ export default function InterviewSettingsPage() {
 
   const handleSaveVoice = async () => {
     if (!newVoice.name || !newVoice.id) {
-        toast.error('Le nom et l\'ID sont requis');
+        toast.error(t('errors.voice_required'));
         return;
     }
 
@@ -205,22 +190,22 @@ export default function InterviewSettingsPage() {
             setSettings(prev => prev.map(item => 
                 item.key === formattedKey ? { ...item, value: newVoice.id } : item
             ));
-            toast.success('Voix mise à jour avec succès');
+            toast.success(t('success.voice_updated'));
         } else {
             // Find language label for description
-            const langLabel = SUPPORTED_LANGUAGES.find(l => l.code === newVoice.name)?.label || newVoice.name;
+            const langLabel = supportedLanguages.find(l => l.code === newVoice.name)?.label || newVoice.name;
 
             const payload = {
                 key: formattedKey,
                 value: newVoice.id,
-                description: newVoice.description || `Voix Hume pour ${langLabel}`
+                description: newVoice.description || t('descriptions.hume_voice_for', { lang: langLabel })
             };
 
             const response = await settingsService.create(payload);
             
             if (response && response.data) {
                 setSettings(prev => [...prev, response.data]);
-                toast.success('Nouvelle voix ajoutée');
+                toast.success(t('success.voice_added'));
             }
         }
 
@@ -228,7 +213,7 @@ export default function InterviewSettingsPage() {
         setNewVoice({ name: 'en', id: '', description: '' });
     } catch (error) {
         console.error('Error saving voice:', error);
-        toast.error('Erreur lors de l\'enregistrement de la voix');
+        toast.error(t('errors.voice_save_failed'));
     } finally {
         setIsCreatingVoice(false);
     }
@@ -236,7 +221,7 @@ export default function InterviewSettingsPage() {
 
   const handleSaveInterviewComplement = async () => {
       if (!newInterviewComplement.value) {
-          toast.error('Le contenu du complément est requis');
+          toast.error(t('errors.complement_required'));
           return;
       }
 
@@ -250,20 +235,20 @@ export default function InterviewSettingsPage() {
               setSettings(prev => prev.map(item => 
                   item.key === formattedKey ? { ...item, value: newInterviewComplement.value } : item
               ));
-              toast.success('Complément mis à jour');
+              toast.success(t('success.complement_updated'));
           } else {
-              const langLabel = SUPPORTED_LANGUAGES.find(l => l.code === newInterviewComplement.lang)?.label || newInterviewComplement.lang;
+              const langLabel = supportedLanguages.find(l => l.code === newInterviewComplement.lang)?.label || newInterviewComplement.lang;
               const payload = {
                   key: formattedKey,
                   value: newInterviewComplement.value,
-                  description: `Instructions complémentaires pour ${langLabel}`
+                  description: t('descriptions.complement_for', { lang: langLabel })
               };
 
               const response = await settingsService.create(payload);
               
               if (response && response.data) {
                   setSettings(prev => [...prev, response.data]);
-                  toast.success('Complément ajouté');
+                  toast.success(t('success.complement_added'));
               }
           }
 
@@ -271,7 +256,7 @@ export default function InterviewSettingsPage() {
           setNewInterviewComplement({ lang: 'en', value: '' });
       } catch (error) {
           console.error('Error saving interview complement:', error);
-          toast.error('Erreur lors de l\'enregistrement');
+          toast.error(t('errors.complement_save_failed'));
       } finally {
           setIsCreatingInterview(false);
       }
@@ -334,7 +319,7 @@ export default function InterviewSettingsPage() {
                     className={`w-full p-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0D7BFF]/20 focus:border-[#0D7BFF] outline-none pr-12 ${savingKey === item.key ? 'bg-gray-50 text-gray-500' : ''}`}
                 />
                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">
-                    sec
+                          {t('units.seconds')}
                  </span>
                  {savingKey === item.key && (
                     <div className="absolute top-1/2 -translate-y-1/2 right-12 text-[#0D7BFF] bg-white rounded-full p-0.5">
@@ -377,14 +362,14 @@ export default function InterviewSettingsPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
           <SettingsIcon className="text-[#0D7BFF]" />
-          Configuration Globale
+                    {t('title')}
         </h1>
-        <p className="text-gray-500 mt-1">Gérez les constantes et prompts du système d&apos;entretien.</p>
+                <p className="text-gray-500 mt-1">{t('subtitle')}</p>
       </div>
 
       <div className="space-y-8">
         {Object.entries(groupedSettings).map(([groupKey, items]) => {
-          const config = GROUP_CONFIG[groupKey] || { label: 'Autres Paramètres', icon: SettingsIcon };
+                    const config = groupConfig[groupKey] || { label: t('groups.other'), icon: SettingsIcon };
           const Icon = config.icon;
 
           return (
@@ -402,7 +387,7 @@ export default function InterviewSettingsPage() {
                         className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-[#0D7BFF] bg-[#0D7BFF]/10 rounded-lg hover:bg-[#0D7BFF]/20 transition-colors"
                     >
                         <Plus size={16} />
-                        Ajouter une voix
+                        {t('actions.add_voice')}
                     </button>
                 )}
                 {groupKey === 'interview' && (
@@ -411,7 +396,7 @@ export default function InterviewSettingsPage() {
                         className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-[#0D7BFF] bg-[#0D7BFF]/10 rounded-lg hover:bg-[#0D7BFF]/20 transition-colors"
                     >
                         <Plus size={16} />
-                        Ajouter un complément
+                        {t('actions.add_complement')}
                     </button>
                 )}
               </div>
@@ -443,7 +428,7 @@ export default function InterviewSettingsPage() {
                 {/* Specific Action for Hume Voices (Add new) could be here if needed */}
                 {groupKey === 'hume' && (
                     <div className="px-6 py-3 bg-gray-50 border-t border-gray-100 text-right">
-                         <span className="text-xs text-gray-400 italic">Pour ajouter une voix, contactez le support technique.</span>
+                         <span className="text-xs text-gray-400 italic">{t('notes.hume_contact')}</span>
                     </div>
                 )}
             </div>
@@ -454,15 +439,15 @@ export default function InterviewSettingsPage() {
       <Modal
         isOpen={isVoiceModalOpen}
         onClose={() => setIsVoiceModalOpen(false)}
-        title="Gestion des voix Hume"
-        description="Ajoutez une nouvelle voix ou mettez à jour une existante"
+        title={t('modal.voice_title')}
+        description={t('modal.voice_description')}
         footer={
             <div className="flex justify-end gap-3 w-full">
                 <button
                     onClick={() => setIsVoiceModalOpen(false)}
                     className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                 >
-                    Annuler
+                    {t('actions.cancel')}
                 </button>
                 <button
                     onClick={handleSaveVoice}
@@ -470,7 +455,7 @@ export default function InterviewSettingsPage() {
                     className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#0D7BFF] rounded-lg hover:bg-[#0056b3] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {isCreatingVoice && <Loader2 className="animate-spin" size={16} />}
-                    {settings.some(s => s.key === `hume.voice.${newVoice.name}`) ? 'Mettre à jour' : 'Ajouter'}
+                    {settings.some(s => s.key === `hume.voice.${newVoice.name}`) ? t('actions.update') : t('actions.add')}
                 </button>
             </div>
         }
@@ -478,7 +463,7 @@ export default function InterviewSettingsPage() {
         <div className="space-y-4 py-4">
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Langue
+                    {t('modal.voice_language')}
                 </label>
                 <select
                     value={newVoice.name}
@@ -493,42 +478,42 @@ export default function InterviewSettingsPage() {
                     }}
                     className="w-full p-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0D7BFF]/20 focus:border-[#0D7BFF] outline-none bg-white"
                 >
-                    {SUPPORTED_LANGUAGES.map((lang) => {
+                    {supportedLanguages.map((lang) => {
                          const exists = settings.some(s => s.key === `hume.voice.${lang.code}`);
                          return (
                             <option key={lang.code} value={lang.code}>
-                                {lang.label} {exists ? '(Configuré)' : ''}
+                                {lang.label} {exists ? t('modal.voice_configured') : ''}
                             </option>
                         );
                     })}
                 </select>
                 <p className="text-xs text-gray-500 mt-1">
-                    Clé associée : <span className="font-mono text-gray-700">hume.voice.{newVoice.name}</span>
+                    {t('modal.voice_key')} <span className="font-mono text-gray-700">hume.voice.{newVoice.name}</span>
                 </p>
             </div>
 
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                    ID de la voix Hume
+                    {t('modal.voice_id')}
                 </label>
                 <input
                     type="text"
                     value={newVoice.id}
                     onChange={(e) => setNewVoice(prev => ({ ...prev, id: e.target.value }))}
-                    placeholder="Ex: Jean"
+                    placeholder={t('modal.voice_id_placeholder')}
                     className="w-full p-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0D7BFF]/20 focus:border-[#0D7BFF] outline-none font-mono"
                 />
             </div>
 
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description (optionnel)
+                    {t('modal.voice_description_label')}
                 </label>
                 <input
                     type="text"
                     value={newVoice.description}
                     onChange={(e) => setNewVoice(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Description courte de la voix"
+                    placeholder={t('modal.voice_description_placeholder')}
                     className="w-full p-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0D7BFF]/20 focus:border-[#0D7BFF] outline-none"
                 />
             </div>
@@ -538,15 +523,15 @@ export default function InterviewSettingsPage() {
       <Modal
         isOpen={isInterviewModalOpen}
         onClose={() => setIsInterviewModalOpen(false)}
-        title="Complément de langue"
-        description="Ajouter des instructions spécifiques pour une langue d'entretien"
+        title={t('modal.interview_title')}
+        description={t('modal.interview_description')}
         footer={
             <div className="flex justify-end gap-3 w-full">
                 <button
                     onClick={() => setIsInterviewModalOpen(false)}
                     className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                 >
-                    Annuler
+                    {t('actions.cancel')}
                 </button>
                 <button
                     onClick={handleSaveInterviewComplement}
@@ -554,7 +539,7 @@ export default function InterviewSettingsPage() {
                     className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#0D7BFF] rounded-lg hover:bg-[#0056b3] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {isCreatingInterview && <Loader2 className="animate-spin" size={16} />}
-                    Enregistrer
+                    {t('actions.save')}
                 </button>
             </div>
         }
@@ -562,35 +547,35 @@ export default function InterviewSettingsPage() {
         <div className="space-y-4 py-4">
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Langue Cible
+                    {t('modal.interview_language')}
                 </label>
                 <select
                     value={newInterviewComplement.lang}
                     onChange={(e) => setNewInterviewComplement(prev => ({ ...prev, lang: e.target.value }))}
                     className="w-full p-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0D7BFF]/20 focus:border-[#0D7BFF] outline-none bg-white"
                 >
-                    {SUPPORTED_LANGUAGES.map((lang) => {
+                    {supportedLanguages.map((lang) => {
                          const exists = settings.some(s => s.key === `interview.complement.${lang.code}`);
                          return (
                             <option key={lang.code} value={lang.code}>
-                                {lang.label} {exists ? '(Existe déjà)' : ''}
+                                {lang.label} {exists ? t('modal.interview_exists') : ''}
                             </option>
                         );
                     })}
                 </select>
                 <p className="text-xs text-gray-500 mt-1">
-                    Clé générée : <span className="font-mono text-gray-700">interview.complement.{newInterviewComplement.lang}</span>
+                    {t('modal.interview_key')} <span className="font-mono text-gray-700">interview.complement.{newInterviewComplement.lang}</span>
                 </p>
             </div>
 
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Instructions / Complément
+                    {t('modal.interview_instructions')}
                 </label>
                 <textarea
                     value={newInterviewComplement.value}
                     onChange={(e) => setNewInterviewComplement(prev => ({ ...prev, value: e.target.value }))}
-                    placeholder="Instructions spécifiques pour cette langue..."
+                    placeholder={t('modal.interview_placeholder')}
                     rows={6}
                     className="w-full p-3 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0D7BFF]/20 focus:border-[#0D7BFF] outline-none font-mono resize-y"
                 />

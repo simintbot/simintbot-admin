@@ -7,35 +7,36 @@ import {
 } from 'lucide-react';
 import { settingsService, SettingItem } from '@/lib/services/settings.service';
 import toast from 'react-hot-toast';
+import { useTranslations } from 'next-intl';
 
 // Helper to group settings nicely
 const KNOWN_GROUPS = ['hume', 'interview', 'prompt', 'report'];
 
-// Mapping for friendly names
-const FRIENDLY_NAMES: Record<string, string> = {
-    'platform.address': 'Adresse du bureau',
-    'platform.contact_email': 'Email de contact',
-    'platform.support_phone': 'Numéro de support',
-    'platform.social_links': 'Réseaux Sociaux',
-    'site.name': 'Nom du site',
-    'site.description': 'Description du site',
-};
-
-const getLabel = (key: string) => {
-    if (FRIENDLY_NAMES[key]) return FRIENDLY_NAMES[key];
-    // Fallback: remove group prefix if exists, split by dot or underscore, capitalize
-    const parts = key.split('.');
-    const cleanKey = parts.length > 1 ? parts.slice(1).join(' ') : parts[0];
-    return cleanKey
-        .split(/[._]/)
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-};
 
 export default function GeneralSettingsPage() {
+  const t = useTranslations('GeneralSettings');
   const [settings, setSettings] = useState<SettingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingKey, setSavingKey] = useState<string | null>(null);
+
+  const friendlyNames = React.useMemo(() => ({
+    'platform.address': t('labels.platform_address'),
+    'platform.contact_email': t('labels.platform_contact_email'),
+    'platform.support_phone': t('labels.platform_support_phone'),
+    'platform.social_links': t('labels.platform_social_links'),
+    'site.name': t('labels.site_name'),
+    'site.description': t('labels.site_description'),
+  }), [t]);
+
+  const getLabel = React.useCallback((key: string) => {
+    if (friendlyNames[key]) return friendlyNames[key];
+    const parts = key.split('.');
+    const cleanKey = parts.length > 1 ? parts.slice(1).join(' ') : parts[0];
+    return cleanKey
+      .split(/[._]/)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }, [friendlyNames]);
 
   // Filter for "Other" settings
   const generalSettings = React.useMemo(() => {
@@ -56,13 +57,13 @@ export default function GeneralSettingsPage() {
         }
       } catch (error) {
         console.error('Error fetching settings:', error);
-        toast.error('Impossible de charger les paramètres');
+        toast.error(t('errors.load_failed'));
       } finally {
         setLoading(false);
       }
     };
     fetchSettings();
-  }, []);
+  }, [t]);
 
   const handleUpdate = async (key: string, newValue: string) => {
     setSavingKey(key);
@@ -71,10 +72,10 @@ export default function GeneralSettingsPage() {
       setSettings(prev => prev.map(item => 
         item.key === key ? { ...item, value: newValue } : item
       ));
-      toast.success('Paramètre mis à jour');
+      toast.success(t('success.updated'));
     } catch (error) {
       console.error('Error updating setting:', error);
-      toast.error('Erreur lors de la mise à jour');
+      toast.error(t('errors.update_failed'));
     } finally {
       setSavingKey(null);
     }
@@ -125,7 +126,7 @@ export default function GeneralSettingsPage() {
                     className={`w-full p-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0D7BFF]/20 focus:border-[#0D7BFF] outline-none pr-12 ${savingKey === item.key ? 'bg-gray-50 text-gray-500' : ''}`}
                 />
                 <div className="absolute top-1/2 -translate-y-1/2 right-3 text-gray-400 text-xs font-medium pointer-events-none">
-                    sec
+                  {t('units.seconds')}
                 </div>
                  {savingKey === item.key && (
                     <div className="absolute top-1/2 -translate-y-1/2 right-8 text-[#0D7BFF] bg-white rounded-full p-0.5">
@@ -168,9 +169,9 @@ export default function GeneralSettingsPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
           <SettingsIcon className="text-[#0D7BFF]" />
-          Informations Générales et Autres
+          {t('title')}
         </h1>
-        <p className="text-gray-500 mt-1">Configurez les informations de contact et les autres paramètres non catégorisés de la plateforme.</p>
+        <p className="text-gray-500 mt-1">{t('subtitle')}</p>
       </div>
 
       <div className="space-y-8">
@@ -180,7 +181,7 @@ export default function GeneralSettingsPage() {
                     <div className="p-2 bg-white rounded-lg border border-gray-100 shadow-sm text-[#0D7BFF]">
                         <SettingsIcon size={20} />
                     </div>
-                    <h2 className="font-semibold text-gray-800 text-lg">Autres Paramètres Système</h2>
+                    <h2 className="font-semibold text-gray-800 text-lg">{t('group_title')}</h2>
                 </div>
               </div>
               
@@ -197,7 +198,7 @@ export default function GeneralSettingsPage() {
                                 {item.key}
                             </p>
                             <p className="text-sm text-gray-500 leading-snug">
-                            {item.description || "Aucune description"}
+                            {item.description || t('table.no_description')}
                             </p>
                         </div>
                         
@@ -209,7 +210,7 @@ export default function GeneralSettingsPage() {
                     ))
                 ) : (
                     <div className="p-8 text-center text-gray-500 italic">
-                        Aucun autre paramètre général trouvé dans la base de données.
+                        {t('empty')}
                     </div>
                 )}
               </div>

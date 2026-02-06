@@ -8,9 +8,12 @@ import {
 import { useMobileSidebar } from './MobileSidebarContext';
 import apiClient from '@/lib/api/client';
 import { userService, User } from '@/lib/services/user.service';
+import { useTranslations } from 'next-intl';
 
 // Composant pour le contenu de la sidebar
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+  const t = useTranslations('Sidebar');
+  const tCommon = useTranslations('Common');
   const pathname = usePathname();
   const router = useRouter();
   const [isInterviewOpen, setIsInterviewOpen] = useState(false);
@@ -45,32 +48,32 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   }, [pathname]);
 
   const menuItems = [
-    { name: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
-    { name: 'Utilisateurs', icon: Users, href: '/users' },
+    { name: t('menu.dashboard'), icon: LayoutDashboard, href: '/dashboard' },
+    { name: t('menu.users'), icon: Users, href: '/users' },
     { 
-      name: 'Entretien', 
+      name: t('menu.interview'), 
       icon: Video, 
       href: '/interview',
       hasSub: true,
       isOpen: isInterviewOpen,
       setIsOpen: setIsInterviewOpen,
       subItems: [
-        { name: 'Décor', href: '/interview/decor' },
-        { name: 'Secteurs d\'activités', href: '/interview/sectors' },
-        { name: 'Jobs', href: '/interview/jobs' },
-        { name: 'Paramètres', href: '/interview/settings' }
+        { name: t('menu.decor'), href: '/interview/decor' },
+        { name: t('menu.sectors'), href: '/interview/sectors' },
+        { name: t('menu.jobs'), href: '/interview/jobs' },
+        { name: t('menu.interview_settings'), href: '/interview/settings' }
       ]
     },
     { 
-      name: 'Paramètres', 
+      name: t('menu.settings'), 
       icon: Settings, 
       href: '/settings',
       hasSub: true,
       isOpen: isSettingsOpen,
       setIsOpen: setIsSettingsOpen,
       subItems: [
-        { name: 'Informations générales', href: '/settings/general' },
-        { name: 'Informations légales', href: '/settings/legal' }
+        { name: t('menu.general_settings'), href: '/settings/general' },
+        { name: t('menu.legal_settings'), href: '/settings/legal' }
       ]
     },
   ];
@@ -82,7 +85,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   };
 
   const handleLogout = () => {
-    const ok = confirm('Êtes-vous sûr de vouloir vous déconnecter ?');
+    const ok = confirm(t('logout_confirm'));
     if (!ok) return;
 
     try {
@@ -104,7 +107,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         </span>
         <img src="/icons/titlerobot.png" alt="Robot" className="w-5 h-5" />
         <span className="text-[10px] font-semibold text-[#0D7BFF] bg-white px-2 py-0.5 rounded-full ml-1">
-          ADMIN
+          {t('admin_badge')}
         </span>
       </div>
 
@@ -129,9 +132,9 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-sm text-white truncate">
-              {currentUser ? `${currentUser.first_name} ${currentUser.last_name}` : 'Administrateur'}
+              {currentUser ? `${currentUser.first_name} ${currentUser.last_name}` : t('admin_label')}
             </p>
-            <p className="text-xs text-white/70">{currentUser?.email || 'Super Admin'}</p>
+            <p className="text-xs text-white/70">{currentUser?.email || t('admin_email_fallback')}</p>
           </div>
           <ChevronDown size={16} className="text-white/50 flex-shrink-0" />
         </div>
@@ -216,7 +219,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       <div className="p-4 mt-auto border-t border-white/20">
         <button onClick={handleLogout} className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-all">
           <LogOut size={18} strokeWidth={1.5} />
-          <span className="text-[13px]">Déconnexion</span>
+          <span className="text-[13px]">{t('logout')}</span>
         </button>
       </div>
     </div>

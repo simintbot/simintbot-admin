@@ -3,9 +3,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Filter, MoreVertical, Eye, UserCheck, UserX, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { userService, User } from '@/lib/services/user.service';
+import { useLocale, useTranslations } from 'next-intl';
 // import { User } from '@/lib/types'; // Using the one from service now
 
 export default function UsersPage() {
+  const t = useTranslations('Users');
+  const locale = useLocale();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -65,8 +68,8 @@ export default function UsersPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Utilisateurs</h1>
-          <p className="text-gray-500 text-sm mt-1">{total} utilisateur(s) trouvé(s)</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+          <p className="text-gray-500 text-sm mt-1">{t('results', { count: total })}</p>
         </div>
       </div>
 
@@ -82,19 +85,19 @@ export default function UsersPage() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Utilisateur</th>
-                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Contact</th>
-                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Entretiens</th>
-                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Statut</th>
-                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Inscription</th>
-                <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('table.user')}</th>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('table.contact')}</th>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('table.interviews')}</th>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('table.status')}</th>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('table.created_at')}</th>
+                <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('table.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {users.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                    Aucun utilisateur trouvé
+                    {t('no_users')}
                   </td>
                 </tr>
               ) : (
@@ -127,11 +130,11 @@ export default function UsersPage() {
                         ? 'bg-green-100 text-green-700' 
                         : 'bg-red-100 text-red-700'
                     }`}>
-                      {user.is_active ? 'Actif' : 'Inactif'}
+                      {user.is_active ? t('status.active') : t('status.inactive')}
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm text-gray-500">{new Date(user.created_at).toLocaleDateString()}</span>
+                    <span className="text-sm text-gray-500">{new Date(user.created_at).toLocaleDateString(locale)}</span>
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="relative inline-block">
@@ -149,7 +152,7 @@ export default function UsersPage() {
                                   className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
                                 >
                                   <Eye size={14} />
-                                  Voir les détails
+                                  {t('actions.view_details')}
                                 </Link>
                                 {/* <button 
                                   onClick={() => handleToggleStatus(user.id)}
@@ -186,7 +189,7 @@ export default function UsersPage() {
         {total > 0 && (
           <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between bg-gray-50">
             <div className="text-sm text-gray-500">
-              Affichage de {((page - 1) * size) + 1} à {Math.min(page * size, total)} sur {total} résultats
+              {t('pagination.range', { start: ((page - 1) * size) + 1, end: Math.min(page * size, total), total })}
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -202,7 +205,7 @@ export default function UsersPage() {
               </button>
               
                <span className="text-sm font-medium text-gray-700 mx-2">
-                  Page {page} sur {totalPages}
+                {t('pagination.page_of', { page, total: totalPages })}
                </span>
 
               <button

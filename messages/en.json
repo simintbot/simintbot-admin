@@ -2,7 +2,10 @@
   "Common": {
     "welcome": "Welcome to SimIntBot Admin",
     "description": "Administration Panel",
-    "architecture_ready": "Architecture ready."
+    "architecture_ready": "Architecture ready.",
+    "brand_name": "SimintBot",
+    "brand_admin": "Admin",
+    "footer_rights": "© 2026 SimintBot. All rights reserved."
   },
   "Auth": {
     "login": "Login",
@@ -10,5 +13,560 @@
   },
   "Error": {
     "generic": "An error occurred"
+  },
+  "LanguageSelector": {
+    "fr": "French",
+    "en": "English"
+  },
+  "Layout": {
+    "auth_checking": "Checking authentication..."
+  },
+  "Login": {
+    "title": "Admin Login",
+    "subtitle": "Access your administration space",
+    "email_label": "Email",
+    "email_placeholder": "admin@simintbot.com",
+    "password_label": "Password",
+    "password_placeholder": "••••••••",
+    "submit": "Sign in",
+    "loading": "Signing in...",
+    "login_success": "Login successful",
+    "login_error": "Login error",
+    "login_failed": "Login failed",
+    "reset_link": "Send password reset",
+    "right_title": "Administration Space",
+    "right_description": "Manage users, simulations, and platform settings.",
+    "reset_sent": "Reset sent",
+    "reset_error": "Error while resetting",
+    "reset_modal": {
+      "title": "Account reset",
+      "description": "Do you want to reset access or create the admin account based on the configured email address?",
+      "cancel": "Cancel",
+      "confirm": "Confirm"
+    }
+  },
+  "ForgotPassword": {
+    "back_to_login": "Back to login",
+    "title": "Forgot password?",
+    "subtitle": "Enter your email address and we will send you a reset link.",
+    "email_label": "Email",
+    "email_placeholder": "admin@simintbot.com",
+    "submit": "Send reset link",
+    "sending": "Sending...",
+    "success_title": "Email sent!",
+    "success_message": "If an account exists with {email}, you will receive an email with reset instructions.",
+    "right_title": "Account recovery",
+    "right_description": "Don't worry! We'll help you regain access to your admin account."
+  },
+  "Dashboard": {
+    "errors": {
+      "load_failed": "Unable to load dashboard data"
+    },
+    "title": "Dashboard",
+    "subtitle": "Overview of SimintBot activity.",
+    "stats": {
+      "total_users": "Total users",
+      "new_users_30d": "+{count} last 30 days",
+      "total_interviews": "Interviews started",
+      "since_start": "Since the beginning",
+      "completed": "Completed",
+      "completed_label": "Interviews completed",
+      "completion_rate": "Completion rate",
+      "global_performance": "Overall performance"
+    },
+    "activity_30d": "Activity over the last 30 days",
+    "popular_sectors": "Popular sectors",
+    "no_sector_data": "No sector data",
+    "recent_activity": "Recent activity",
+    "table": {
+      "user": "User",
+      "type": "Type",
+      "date": "Date",
+      "score": "Score",
+      "status": "Status"
+    },
+    "status": {
+      "completed": "Completed",
+      "in_progress": "In progress"
+    },
+    "no_recent_activity": "No recent activity"
+  },
+  "Planifications": {
+    "calendar_title": "Interview calendar",
+    "new_plan": "New schedule",
+    "legend": {
+      "simulated": "Simulated interview",
+      "real": "Real interview"
+    },
+    "month_label": "{month} {year}",
+    "months": {
+      "february": "February"
+    },
+    "days": {
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "sun": "Sun"
+    },
+    "days_short": {
+      "mon": "M",
+      "tue": "T",
+      "wed": "W",
+      "thu": "T",
+      "fri": "F",
+      "sat": "S",
+      "sun": "S"
+    },
+    "today": "Today",
+    "upcoming": "Upcoming",
+    "event_title": "Interview - {name}",
+    "jobs": {
+      "react_dev": "React Developer",
+      "project_manager": "Project Manager",
+      "product_manager": "Product Manager",
+      "ux_designer": "UX Designer",
+      "data_analyst": "Data Analyst"
+    },
+    "dates": {
+      "feb_22": "Feb 22",
+      "feb_24": "Feb 24",
+      "feb_25": "Feb 25"
+    }
+  },
+  "Navbar": {
+    "page_titles": {
+      "dashboard": "Dashboard",
+      "users": "Users",
+      "planifications": "Planifications",
+      "decor": "Decor",
+      "jobs": "Job Sheets",
+      "interview_settings": "Interview Settings",
+      "general_settings": "General Settings",
+      "legal_settings": "Legal Settings"
+    },
+    "admin_label": "Administrator",
+    "admin_email_fallback": "admin@simintbot.com",
+    "settings": "Settings",
+    "logout": "Logout",
+    "logout_modal": {
+      "title": "Logout",
+      "message": "Are you sure you want to log out of the admin space?",
+      "cancel": "Cancel",
+      "confirm": "Logout"
+    }
+  },
+  "Sidebar": {
+    "menu": {
+      "dashboard": "Dashboard",
+      "users": "Users",
+      "interview": "Interview",
+      "decor": "Decor",
+      "sectors": "Sectors",
+      "jobs": "Jobs",
+      "interview_settings": "Settings",
+      "settings": "Settings",
+      "general_settings": "General information",
+      "legal_settings": "Legal information"
+    },
+    "admin_badge": "ADMIN",
+    "admin_label": "Administrator",
+    "admin_email_fallback": "Super Admin",
+    "logout": "Logout",
+    "logout_confirm": "Are you sure you want to log out?"
+  },
+  "Users": {
+    "title": "Users",
+    "results": "{count} user(s) found",
+    "table": {
+      "user": "User",
+      "contact": "Contact",
+      "interviews": "Interviews",
+      "status": "Status",
+      "created_at": "Signup",
+      "actions": "Actions"
+    },
+    "no_users": "No users found",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "actions": {
+      "view_details": "View details"
+    },
+    "pagination": {
+      "range": "Showing {start} to {end} of {total} results",
+      "page_of": "Page {page} of {total}"
+    }
+  },
+  "InterviewDecor": {
+    "errors": {
+      "unknown": "Unknown error"
+    },
+    "title": "Decor",
+    "subtitle": "Manage interview decor backgrounds.",
+    "count": "{count} decor(s)",
+    "actions": {
+      "add": "Add decor",
+      "edit": "Edit",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "save": "Save",
+      "create": "Create"
+    },
+    "filters": {
+      "search": "Search a decor...",
+      "all_countries": "All countries"
+    },
+    "empty": "No decor found",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "modal": {
+      "edit_title": "Edit decor",
+      "new_title": "New decor"
+    },
+    "form": {
+      "name_label": "Decor name",
+      "name_placeholder": "e.g. Modern office",
+      "country_label": "Country",
+      "image_label": "Image",
+      "image_preview": "Preview",
+      "image_current": "Current image",
+      "image_change": "Click to change the image",
+      "image_upload": "Click to upload an image",
+      "image_hint": "PNG, JPG up to 5MB"
+    }
+  },
+  "Jobs": {
+    "errors": {
+      "load_failed": "Unable to load job sheets"
+    },
+    "title": "Job sheets",
+    "subtitle": "Manage job sheets for simulations",
+    "filters": {
+      "sector": "Filter by sector..."
+    },
+    "results": "{count} results found",
+    "table": {
+      "title": "Job title",
+      "sector": "Sector",
+      "salary": "Salary (Min - Max)",
+      "qualification": "Qualification",
+      "language": "Language",
+      "created_at": "Created"
+    },
+    "loading": "Loading job sheets...",
+    "empty": "No job sheet found.",
+    "badge": {
+      "template": "Template"
+    },
+    "pagination": {
+      "range": "Showing {start} to {end} of {total} results",
+      "page_of": "Page {page} of {total}"
+    }
+  },
+  "Sectors": {
+    "errors": {
+      "unknown": "Unknown error"
+    },
+    "title": "Sectors",
+    "count": "{count} sector(s)",
+    "actions": {
+      "add": "New sector",
+      "edit": "Edit",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "save": "Save",
+      "create": "Create"
+    },
+    "filters": {
+      "search": "Search a sector...",
+      "all_statuses": "All statuses",
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "table": {
+      "name": "Name",
+      "description": "Description",
+      "status": "Status",
+      "actions": "Actions",
+      "no_description": "—"
+    },
+    "empty": "No sector found",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "pagination": {
+      "page": "Page {page}",
+      "prev": "Previous",
+      "next": "Next"
+    },
+    "modal": {
+      "edit_title": "Edit sector",
+      "new_title": "New sector"
+    },
+    "form": {
+      "name_label": "Name",
+      "name_placeholder": "e.g. Technology",
+      "description_label": "Description",
+      "description_placeholder": "Describe the sector...",
+      "active_label": "Active sector"
+    },
+    "confirm_delete": "Delete this sector?"
+  },
+  "InterviewSettings": {
+    "errors": {
+      "load_failed": "Unable to load settings",
+      "update_failed": "Error while updating",
+      "voice_required": "Name and ID are required",
+      "voice_save_failed": "Error while saving the voice",
+      "complement_required": "Complement content is required",
+      "complement_save_failed": "Error while saving"
+    },
+    "success": {
+      "updated": "Setting updated",
+      "voice_updated": "Voice updated successfully",
+      "voice_added": "New voice added",
+      "complement_updated": "Complement updated",
+      "complement_added": "Complement added"
+    },
+    "title": "Global configuration",
+    "subtitle": "Manage constants and prompts for the interview system.",
+    "groups": {
+      "hume": "Voice & AI (Hume)",
+      "interview": "Interview configuration",
+      "prompt": "Strategy & prompts",
+      "report": "Reports & analysis",
+      "other": "Other settings"
+    },
+    "labels": {
+      "hume_api_key": "Hume API key",
+      "hume_secret": "Hume secret",
+      "hume_config_id": "Hume configuration ID",
+      "interview_max_duration": "Max duration (sec)",
+      "prompt_system_template": "System template (Prompt)",
+      "prompt_strategy": "Interview strategy",
+      "recruiter_names": "Recruiter names (JSON)",
+      "voice_lang": "AI voice ({lang})",
+      "complement_lang": "Interview complement ({lang})"
+    },
+    "actions": {
+      "add_voice": "Add voice",
+      "add_complement": "Add complement",
+      "cancel": "Cancel",
+      "update": "Update",
+      "add": "Add",
+      "save": "Save"
+    },
+    "units": {
+      "seconds": "sec"
+    },
+    "notes": {
+      "hume_contact": "To add a voice, contact technical support."
+    },
+    "modal": {
+      "voice_title": "Hume voice management",
+      "voice_description": "Add a new voice or update an existing one",
+      "voice_language": "Language",
+      "voice_configured": "(Configured)",
+      "voice_key": "Associated key:",
+      "voice_id": "Hume voice ID",
+      "voice_id_placeholder": "e.g. Jean",
+      "voice_description_label": "Description (optional)",
+      "voice_description_placeholder": "Short voice description",
+      "interview_title": "Language complement",
+      "interview_description": "Add specific instructions for an interview language",
+      "interview_language": "Target language",
+      "interview_exists": "(Already exists)",
+      "interview_key": "Generated key:",
+      "interview_instructions": "Instructions / Complement",
+      "interview_placeholder": "Specific instructions for this language..."
+    },
+    "descriptions": {
+      "hume_voice_for": "Hume voice for {lang}",
+      "complement_for": "Complementary instructions for {lang}"
+    },
+    "languages": {
+      "en": "English (English)",
+      "fr": "French",
+      "es": "Spanish (Español)",
+      "de": "German (Deutsch)",
+      "it": "Italian (Italiano)",
+      "pt": "Portuguese (Português)",
+      "zh": "Chinese (Chinese)",
+      "ja": "Japanese (Japanese)",
+      "ko": "Korean (Korean)",
+      "ru": "Russian (Russian)"
+    }
+  },
+  "GeneralSettings": {
+    "errors": {
+      "load_failed": "Unable to load settings",
+      "update_failed": "Error while updating"
+    },
+    "success": {
+      "updated": "Setting updated"
+    },
+    "title": "General information and others",
+    "subtitle": "Configure contact information and other uncategorized platform settings.",
+    "group_title": "Other system settings",
+    "table": {
+      "no_description": "No description"
+    },
+    "empty": "No other general settings found in the database.",
+    "units": {
+      "seconds": "sec"
+    },
+    "labels": {
+      "platform_address": "Office address",
+      "platform_contact_email": "Contact email",
+      "platform_support_phone": "Support phone",
+      "platform_social_links": "Social links",
+      "site_name": "Site name",
+      "site_description": "Site description"
+    }
+  },
+  "LegalSettings": {
+    "errors": {
+      "save_failed": "Error while saving"
+    },
+    "success": {
+      "updated": "Document updated successfully",
+      "created": "Document created successfully",
+      "translation_added": "Translation added successfully"
+    },
+    "title": "Legal information",
+    "subtitle": "Manage the site's legal and institutional pages",
+    "toolbar": {
+      "bold": "Bold",
+      "italic": "Italic",
+      "underline": "Underline",
+      "bullets": "Bulleted list",
+      "numbered": "Numbered list",
+      "align_left": "Align left",
+      "align_center": "Center",
+      "align_right": "Align right",
+      "insert_link": "Insert link",
+      "format": "Format",
+      "paragraph": "Paragraph",
+      "heading1": "Heading 1",
+      "heading2": "Heading 2",
+      "heading3": "Heading 3",
+      "link_prompt": "Enter the link URL:"
+    },
+    "languages": {
+      "en": "English (English)",
+      "fr": "French",
+      "es": "Spanish (Español)",
+      "de": "German (Deutsch)",
+      "it": "Italian (Italiano)",
+      "pt": "Portuguese (Português)",
+      "zh": "Chinese (Chinese)",
+      "ja": "Japanese (Japanese)",
+      "ko": "Korean (Korean)",
+      "ru": "Russian (Russian)"
+    },
+    "doc_types": {
+      "about": "About",
+      "privacy_policy": "Privacy policy",
+      "terms_of_use": "Terms of use",
+      "legal_notice": "Legal notice"
+    },
+    "labels": {
+      "title": "Page title ({lang})",
+      "title_placeholder": "e.g. {title}",
+      "content": "HTML content",
+      "content_count": "{count} characters • Raw HTML supported"
+    },
+    "status": {
+      "existing": "Existing document",
+      "draft": "New draft"
+    },
+    "actions": {
+      "saving": "Saving...",
+      "update": "Update",
+      "create": "Create document"
+    }
+  },
+  "UserDetails": {
+    "not_found": "User not found",
+    "tabs": {
+      "info": "Information",
+      "cv": "Full CV",
+      "history": "Interview history",
+      "planifications": "Planifications"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "sections": {
+      "personal": "Personal information",
+      "biography": "Biography",
+      "social": "Social links",
+      "stats": "Statistics"
+    },
+    "labels": {
+      "not_provided": "Not provided",
+      "born": "Born on {date}",
+      "interviews": "Interviews",
+      "avg_score": "Average score",
+      "signed_up": "Signed up on {date}"
+    },
+    "cv": {
+      "empty": "No CV data available.",
+      "original": "View original CV",
+      "experience_years": "{count} years of experience",
+      "experience_title": "Professional experience",
+      "projects": "Projects",
+      "view": "View",
+      "education": "Education",
+      "hard_skills": "Hard skills",
+      "soft_skills": "Soft skills",
+      "languages": "Languages"
+    },
+    "history": {
+      "empty": "No interview history found.",
+      "interview_label": "Interview {date}",
+      "status": {
+        "completed": "Completed",
+        "in_progress": "In progress",
+        "scheduled": "Scheduled"
+      }
+    },
+    "calendar": {
+      "today": "Today",
+      "completed": "Completed",
+      "planned": "Scheduled",
+      "default_title": "Interview",
+      "selected_date": "On {date}",
+      "upcoming_month": "Upcoming this month",
+      "events_count": "{count} event(s)",
+      "no_events": "No events"
+    },
+    "modal": {
+      "with_recruiter": "With {name}",
+      "date": "Date",
+      "time": "Time",
+      "duration": "Duration",
+      "status": "Status",
+      "in_progress": "In progress",
+      "scheduled": "Scheduled",
+      "completed": "Completed",
+      "report": "Report / Description",
+      "close": "Close"
+    },
+    "units": {
+      "minutes_short": "min"
+    }
   }
 }

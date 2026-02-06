@@ -1,8 +1,11 @@
 {
   "Common": {
-    "welcome": "Bienvenue sur SimIntBot Admin",
+    "welcome": "Bienvenue sur SimintBot Admin",
     "description": "Panneau d'administration",
-    "architecture_ready": "Architecture prête."
+    "architecture_ready": "Architecture prête.",
+    "brand_name": "SimintBot",
+    "brand_admin": "Admin",
+    "footer_rights": "© 2026 SimintBot. Tous droits réservés."
   },
   "Auth": {
     "login": "Se connecter",
@@ -10,5 +13,560 @@
   },
   "Error": {
     "generic": "Une erreur est survenue"
+  },
+  "LanguageSelector": {
+    "fr": "Français",
+    "en": "Anglais"
+  },
+  "Layout": {
+    "auth_checking": "Vérification d'authentification..."
+  },
+  "Login": {
+    "title": "Connexion Admin",
+    "subtitle": "Accédez à votre espace d'administration",
+    "email_label": "Email",
+    "email_placeholder": "admin@simintbot.com",
+    "password_label": "Mot de passe",
+    "password_placeholder": "••••••••",
+    "submit": "Se connecter",
+    "loading": "Connexion en cours...",
+    "login_success": "Connexion réussie",
+    "login_error": "Erreur de connexion",
+    "login_failed": "Connexion échouée",
+    "reset_link": "Envoyer la réinitialisation du mot de passe",
+    "right_title": "Espace Administration",
+    "right_description": "Gérez les utilisateurs, les simulations et les paramètres de la plateforme.",
+    "reset_sent": "Réinitialisation envoyée",
+    "reset_error": "Erreur lors de la réinitialisation",
+    "reset_modal": {
+      "title": "Réinitialisation du compte",
+      "description": "Voulez-vous vraiment réinitialiser les accès ou créer le compte administrateur basé sur l'adresse email configurée ?",
+      "cancel": "Annuler",
+      "confirm": "Confirmer"
+    }
+  },
+  "ForgotPassword": {
+    "back_to_login": "Retour à la connexion",
+    "title": "Mot de passe oublié ?",
+    "subtitle": "Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe.",
+    "email_label": "Email",
+    "email_placeholder": "admin@simintbot.com",
+    "submit": "Envoyer le lien de réinitialisation",
+    "sending": "Envoi en cours...",
+    "success_title": "Email envoyé !",
+    "success_message": "Si un compte existe avec l'adresse {email}, vous recevrez un email avec les instructions pour réinitialiser votre mot de passe.",
+    "right_title": "Récupération de compte",
+    "right_description": "Pas de panique ! Nous allons vous aider à récupérer l'accès à votre compte administrateur."
+  },
+  "Dashboard": {
+    "errors": {
+      "load_failed": "Impossible de charger les données du dashboard"
+    },
+    "title": "Tableau de bord",
+    "subtitle": "Vue d'ensemble de l'activité sur SimintBot.",
+    "stats": {
+      "total_users": "Utilisateurs total",
+      "new_users_30d": "+{count} derniers 30j",
+      "total_interviews": "Entretiens lancés",
+      "since_start": "Depuis le début",
+      "completed": "Terminés",
+      "completed_label": "Entretiens complétés",
+      "completion_rate": "Taux de complétion",
+      "global_performance": "Performance globale"
+    },
+    "activity_30d": "Activité des 30 derniers jours",
+    "popular_sectors": "Secteurs populaires",
+    "no_sector_data": "Aucune donnée de secteur",
+    "recent_activity": "Activité récente",
+    "table": {
+      "user": "Utilisateur",
+      "type": "Type",
+      "date": "Date",
+      "score": "Score",
+      "status": "Statut"
+    },
+    "status": {
+      "completed": "Terminé",
+      "in_progress": "En cours"
+    },
+    "no_recent_activity": "Aucune activité récente"
+  },
+  "Planifications": {
+    "calendar_title": "Calendrier des entretiens",
+    "new_plan": "Nouvelle planification",
+    "legend": {
+      "simulated": "Entretien simulé",
+      "real": "Entretien réel"
+    },
+    "month_label": "{month} {year}",
+    "months": {
+      "february": "Février"
+    },
+    "days": {
+      "mon": "Lun",
+      "tue": "Mar",
+      "wed": "Mer",
+      "thu": "Jeu",
+      "fri": "Ven",
+      "sat": "Sam",
+      "sun": "Dim"
+    },
+    "days_short": {
+      "mon": "L",
+      "tue": "M",
+      "wed": "M",
+      "thu": "J",
+      "fri": "V",
+      "sat": "S",
+      "sun": "D"
+    },
+    "today": "Aujourd'hui",
+    "upcoming": "À venir",
+    "event_title": "Entretien - {name}",
+    "jobs": {
+      "react_dev": "Développeur React",
+      "project_manager": "Chef de Projet",
+      "product_manager": "Product Manager",
+      "ux_designer": "Designer UX",
+      "data_analyst": "Data Analyst"
+    },
+    "dates": {
+      "feb_22": "22 Fév",
+      "feb_24": "24 Fév",
+      "feb_25": "25 Fév"
+    }
+  },
+  "Navbar": {
+    "page_titles": {
+      "dashboard": "Dashboard",
+      "users": "Utilisateurs",
+      "planifications": "Planifications",
+      "decor": "Décors",
+      "jobs": "Fiches métiers",
+      "interview_settings": "Paramètres interview",
+      "general_settings": "Informations générales",
+      "legal_settings": "Informations légales"
+    },
+    "admin_label": "Administrateur",
+    "admin_email_fallback": "admin@simintbot.com",
+    "settings": "Paramètres",
+    "logout": "Déconnexion",
+    "logout_modal": {
+      "title": "Déconnexion",
+      "message": "Êtes-vous sûr de vouloir vous déconnecter de l'espace d'administration ?",
+      "cancel": "Annuler",
+      "confirm": "Déconnexion"
+    }
+  },
+  "Sidebar": {
+    "menu": {
+      "dashboard": "Dashboard",
+      "users": "Utilisateurs",
+      "interview": "Entretien",
+      "decor": "Décor",
+      "sectors": "Secteurs d'activités",
+      "jobs": "Jobs",
+      "interview_settings": "Paramètres",
+      "settings": "Paramètres",
+      "general_settings": "Informations générales",
+      "legal_settings": "Informations légales"
+    },
+    "admin_badge": "ADMIN",
+    "admin_label": "Administrateur",
+    "admin_email_fallback": "Super Admin",
+    "logout": "Déconnexion",
+    "logout_confirm": "Êtes-vous sûr de vouloir vous déconnecter ?"
+  },
+  "Users": {
+    "title": "Utilisateurs",
+    "results": "{count} utilisateur(s) trouvé(s)",
+    "table": {
+      "user": "Utilisateur",
+      "contact": "Contact",
+      "interviews": "Entretiens",
+      "status": "Statut",
+      "created_at": "Inscription",
+      "actions": "Actions"
+    },
+    "no_users": "Aucun utilisateur trouvé",
+    "status": {
+      "active": "Actif",
+      "inactive": "Inactif"
+    },
+    "actions": {
+      "view_details": "Voir les détails"
+    },
+    "pagination": {
+      "range": "Affichage de {start} à {end} sur {total} résultats",
+      "page_of": "Page {page} sur {total}"
+    }
+  },
+  "InterviewDecor": {
+    "errors": {
+      "unknown": "Erreur inconnue"
+    },
+    "title": "Décors",
+    "subtitle": "Gérez les décors des simulations d'entretien.",
+    "count": "{count} décor(s)",
+    "actions": {
+      "add": "Ajouter un décor",
+      "edit": "Modifier",
+      "activate": "Activer",
+      "deactivate": "Désactiver",
+      "delete": "Supprimer",
+      "cancel": "Annuler",
+      "save": "Enregistrer",
+      "create": "Créer"
+    },
+    "filters": {
+      "search": "Rechercher un décor...",
+      "all_countries": "Tous les pays"
+    },
+    "empty": "Aucun décor trouvé",
+    "status": {
+      "active": "Actif",
+      "inactive": "Inactif"
+    },
+    "modal": {
+      "edit_title": "Modifier le décor",
+      "new_title": "Nouveau décor"
+    },
+    "form": {
+      "name_label": "Nom du décor",
+      "name_placeholder": "Ex: Bureau moderne",
+      "country_label": "Pays",
+      "image_label": "Image",
+      "image_preview": "Aperçu",
+      "image_current": "Image actuelle",
+      "image_change": "Cliquez pour changer l'image",
+      "image_upload": "Cliquez pour uploader une image",
+      "image_hint": "PNG, JPG jusqu'à 5MB"
+    }
+  },
+  "Jobs": {
+    "errors": {
+      "load_failed": "Erreur lors du chargement des fiches métiers"
+    },
+    "title": "Fiches métiers",
+    "subtitle": "Gérez les fiches postes pour les simulations",
+    "filters": {
+      "sector": "Filtrer par secteur..."
+    },
+    "results": "{count} résultats trouvés",
+    "table": {
+      "title": "Titre du poste",
+      "sector": "Secteur",
+      "salary": "Salaire (Min - Max)",
+      "qualification": "Qualification",
+      "language": "Langue",
+      "created_at": "Date création"
+    },
+    "loading": "Chargement des fiches...",
+    "empty": "Aucune fiche métier trouvée.",
+    "badge": {
+      "template": "Modèle"
+    },
+    "pagination": {
+      "range": "Affichage de {start} à {end} sur {total} résultats",
+      "page_of": "Page {page} sur {total}"
+    }
+  },
+  "Sectors": {
+    "errors": {
+      "unknown": "Erreur inconnue"
+    },
+    "title": "Secteurs d'activités",
+    "count": "{count} secteur(s)",
+    "actions": {
+      "add": "Nouveau secteur",
+      "edit": "Modifier",
+      "activate": "Activer",
+      "deactivate": "Désactiver",
+      "delete": "Supprimer",
+      "cancel": "Annuler",
+      "save": "Enregistrer",
+      "create": "Créer"
+    },
+    "filters": {
+      "search": "Rechercher un secteur...",
+      "all_statuses": "Tous les statuts",
+      "active": "Actifs",
+      "inactive": "Inactifs"
+    },
+    "table": {
+      "name": "Nom",
+      "description": "Description",
+      "status": "Statut",
+      "actions": "Actions",
+      "no_description": "—"
+    },
+    "empty": "Aucun secteur trouvé",
+    "status": {
+      "active": "Actif",
+      "inactive": "Inactif"
+    },
+    "pagination": {
+      "page": "Page {page}",
+      "prev": "Précédent",
+      "next": "Suivant"
+    },
+    "modal": {
+      "edit_title": "Modifier le secteur",
+      "new_title": "Nouveau secteur"
+    },
+    "form": {
+      "name_label": "Nom",
+      "name_placeholder": "Ex: Technologie",
+      "description_label": "Description",
+      "description_placeholder": "Décrivez le secteur...",
+      "active_label": "Secteur actif"
+    },
+    "confirm_delete": "Supprimer ce secteur ?"
+  },
+  "InterviewSettings": {
+    "errors": {
+      "load_failed": "Impossible de charger les paramètres",
+      "update_failed": "Erreur lors de la mise à jour",
+      "voice_required": "Le nom et l'ID sont requis",
+      "voice_save_failed": "Erreur lors de l'enregistrement de la voix",
+      "complement_required": "Le contenu du complément est requis",
+      "complement_save_failed": "Erreur lors de l'enregistrement"
+    },
+    "success": {
+      "updated": "Paramètre mis à jour",
+      "voice_updated": "Voix mise à jour avec succès",
+      "voice_added": "Nouvelle voix ajoutée",
+      "complement_updated": "Complément mis à jour",
+      "complement_added": "Complément ajouté"
+    },
+    "title": "Configuration globale",
+    "subtitle": "Gérez les constantes et prompts du système d'entretien.",
+    "groups": {
+      "hume": "Voix & IA (Hume)",
+      "interview": "Configuration entretien",
+      "prompt": "Stratégie & prompts",
+      "report": "Rapports & analyse",
+      "other": "Autres paramètres"
+    },
+    "labels": {
+      "hume_api_key": "Clé API Hume",
+      "hume_secret": "Secret Hume",
+      "hume_config_id": "ID de configuration Hume",
+      "interview_max_duration": "Durée maximale (sec)",
+      "prompt_system_template": "Template système (Prompt)",
+      "prompt_strategy": "Stratégie d'entretien",
+      "recruiter_names": "Noms des recruteurs (JSON)",
+      "voice_lang": "Voix IA ({lang})",
+      "complement_lang": "Complément d'entretien ({lang})"
+    },
+    "actions": {
+      "add_voice": "Ajouter une voix",
+      "add_complement": "Ajouter un complément",
+      "cancel": "Annuler",
+      "update": "Mettre à jour",
+      "add": "Ajouter",
+      "save": "Enregistrer"
+    },
+    "units": {
+      "seconds": "sec"
+    },
+    "notes": {
+      "hume_contact": "Pour ajouter une voix, contactez le support technique."
+    },
+    "modal": {
+      "voice_title": "Gestion des voix Hume",
+      "voice_description": "Ajoutez une nouvelle voix ou mettez à jour une existante",
+      "voice_language": "Langue",
+      "voice_configured": "(Configuré)",
+      "voice_key": "Clé associée :",
+      "voice_id": "ID de la voix Hume",
+      "voice_id_placeholder": "Ex: Jean",
+      "voice_description_label": "Description (optionnel)",
+      "voice_description_placeholder": "Description courte de la voix",
+      "interview_title": "Complément de langue",
+      "interview_description": "Ajouter des instructions spécifiques pour une langue d'entretien",
+      "interview_language": "Langue cible",
+      "interview_exists": "(Existe déjà)",
+      "interview_key": "Clé générée :",
+      "interview_instructions": "Instructions / Complément",
+      "interview_placeholder": "Instructions spécifiques pour cette langue..."
+    },
+    "descriptions": {
+      "hume_voice_for": "Voix Hume pour {lang}",
+      "complement_for": "Instructions complémentaires pour {lang}"
+    },
+    "languages": {
+      "en": "Anglais (English)",
+      "fr": "Français",
+      "es": "Espagnol (Español)",
+      "de": "Allemand (Deutsch)",
+      "it": "Italien (Italiano)",
+      "pt": "Portugais (Português)",
+      "zh": "Chinois (Chinese)",
+      "ja": "Japonais (Japanese)",
+      "ko": "Coréen (Korean)",
+      "ru": "Russe (Russian)"
+    }
+  },
+  "GeneralSettings": {
+    "errors": {
+      "load_failed": "Impossible de charger les paramètres",
+      "update_failed": "Erreur lors de la mise à jour"
+    },
+    "success": {
+      "updated": "Paramètre mis à jour"
+    },
+    "title": "Informations générales et autres",
+    "subtitle": "Configurez les informations de contact et les autres paramètres non catégorisés de la plateforme.",
+    "group_title": "Autres paramètres système",
+    "table": {
+      "no_description": "Aucune description"
+    },
+    "empty": "Aucun autre paramètre général trouvé dans la base de données.",
+    "units": {
+      "seconds": "sec"
+    },
+    "labels": {
+      "platform_address": "Adresse du bureau",
+      "platform_contact_email": "Email de contact",
+      "platform_support_phone": "Numéro de support",
+      "platform_social_links": "Réseaux sociaux",
+      "site_name": "Nom du site",
+      "site_description": "Description du site"
+    }
+  },
+  "LegalSettings": {
+    "errors": {
+      "save_failed": "Erreur lors de l'enregistrement"
+    },
+    "success": {
+      "updated": "Document mis à jour avec succès",
+      "created": "Document créé avec succès",
+      "translation_added": "Traduction ajoutée avec succès"
+    },
+    "title": "Informations légales",
+    "subtitle": "Gérez les pages légales et institutionnelles du site",
+    "toolbar": {
+      "bold": "Gras",
+      "italic": "Italique",
+      "underline": "Souligné",
+      "bullets": "Liste à puces",
+      "numbered": "Liste numérotée",
+      "align_left": "Aligner à gauche",
+      "align_center": "Centrer",
+      "align_right": "Aligner à droite",
+      "insert_link": "Insérer un lien",
+      "format": "Format",
+      "paragraph": "Paragraphe",
+      "heading1": "Titre 1",
+      "heading2": "Titre 2",
+      "heading3": "Titre 3",
+      "link_prompt": "Entrez l'URL du lien:"
+    },
+    "languages": {
+      "en": "Anglais (English)",
+      "fr": "Français",
+      "es": "Espagnol (Español)",
+      "de": "Allemand (Deutsch)",
+      "it": "Italien (Italiano)",
+      "pt": "Portugais (Português)",
+      "zh": "Chinois (Chinese)",
+      "ja": "Japonais (Japanese)",
+      "ko": "Coréen (Korean)",
+      "ru": "Russe (Russian)"
+    },
+    "doc_types": {
+      "about": "À propos",
+      "privacy_policy": "Politique de confidentialité",
+      "terms_of_use": "Conditions d'utilisation",
+      "legal_notice": "Mentions légales"
+    },
+    "labels": {
+      "title": "Titre de la page ({lang})",
+      "title_placeholder": "Ex: {title}",
+      "content": "Contenu HTML",
+      "content_count": "{count} caractères • HTML brut supporté"
+    },
+    "status": {
+      "existing": "Document existant",
+      "draft": "Nouveau brouillon"
+    },
+    "actions": {
+      "saving": "Enregistrement...",
+      "update": "Mettre à jour",
+      "create": "Créer le document"
+    }
+  },
+  "UserDetails": {
+    "not_found": "Utilisateur non trouvé",
+    "tabs": {
+      "info": "Informations",
+      "cv": "CV complet",
+      "history": "Historique entretiens",
+      "planifications": "Planifications"
+    },
+    "status": {
+      "active": "Actif",
+      "inactive": "Inactif"
+    },
+    "sections": {
+      "personal": "Informations personnelles",
+      "biography": "Biographie",
+      "social": "Réseaux sociaux",
+      "stats": "Statistiques"
+    },
+    "labels": {
+      "not_provided": "Non renseigné",
+      "born": "Né le {date}",
+      "interviews": "Entretiens",
+      "avg_score": "Score moyen",
+      "signed_up": "Inscrit le {date}"
+    },
+    "cv": {
+      "empty": "Aucune donnée de CV disponible.",
+      "original": "Voir le CV original",
+      "experience_years": "{count} ans d'expérience",
+      "experience_title": "Expériences professionnelles",
+      "projects": "Projets",
+      "view": "Voir",
+      "education": "Formation",
+      "hard_skills": "Hard Skills",
+      "soft_skills": "Soft Skills",
+      "languages": "Langues"
+    },
+    "history": {
+      "empty": "Aucun historique d'entretien trouvé.",
+      "interview_label": "Entretien {date}",
+      "status": {
+        "completed": "Terminé",
+        "in_progress": "En cours",
+        "scheduled": "Planifié"
+      }
+    },
+    "calendar": {
+      "today": "Aujourd'hui",
+      "completed": "Complété",
+      "planned": "Planifié",
+      "default_title": "Entretien",
+      "selected_date": "Le {date}",
+      "upcoming_month": "À venir ce mois",
+      "events_count": "{count} événement(s)",
+      "no_events": "Aucun événement"
+    },
+    "modal": {
+      "with_recruiter": "Avec {name}",
+      "date": "Date",
+      "time": "Heure",
+      "duration": "Durée",
+      "status": "Statut",
+      "in_progress": "En cours",
+      "scheduled": "Planifié",
+      "completed": "Terminé",
+      "report": "Rapport / Description",
+      "close": "Fermer"
+    },
+    "units": {
+      "minutes_short": "min"
+    }
   }
 }

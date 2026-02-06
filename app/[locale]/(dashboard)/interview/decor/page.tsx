@@ -1,14 +1,17 @@
 "use client";
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 import { ApiError } from '@/lib/api/client';
 import authService from '@/lib/api/services/auth.service';
 import apiClient from '@/lib/api/client';
 import { Search, Filter, Plus, MoreVertical, Edit, Trash2, Eye, EyeOff, X, Upload, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { decorService, COUNTRIES } from '@/lib/services/decor.service';
 import { Decor, DecorFormData } from '@/lib/types';
+import { useLocale, useTranslations } from 'next-intl';
 
 export default function DecorPage() {
+  const t = useTranslations('InterviewDecor');
+  const locale = useLocale();
   const [decors, setDecors] = useState<Decor[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -27,7 +30,7 @@ export default function DecorPage() {
     if (error && typeof error === 'object' && 'message' in (error as any)) {
       return (error as any).message;
     }
-    return String(error ?? 'Erreur inconnue');
+    return String(error ?? t('errors.unknown'));
   };
 
   // Charger les décors
@@ -135,14 +138,14 @@ export default function DecorPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Décors</h1>
-          <p className="text-gray-500 text-sm mt-1">{decors.length} décor(s)</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+          <p className="text-gray-500 text-sm mt-1">{t('count', { count: decors.length })}</p>
         </div>
         <button 
           onClick={openCreateModal}
           className="bg-[#0D7BFF] text-white px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-[#0a6ae0] transition-colors"
         >
-          <Plus size={18} /> Ajouter un décor
+          <Plus size={18} /> {t('actions.add')}
         </button>
       </div>
 
@@ -153,7 +156,7 @@ export default function DecorPage() {
             <Search size={18} className="text-gray-400" />
             <input 
               type="text" 
-              placeholder="Rechercher un décor..."
+              placeholder={t('filters.search')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="bg-transparent outline-none text-sm flex-1 text-gray-600"
@@ -166,7 +169,7 @@ export default function DecorPage() {
               onChange={(e) => setCountryFilter(e.target.value)}
               className="bg-gray-50 border-0 rounded-xl px-4 py-2.5 text-sm text-gray-600 outline-none focus:ring-2 focus:ring-[#0D7BFF]"
             >
-              <option value="all">Tous les pays</option>
+              <option value="all">{t('filters.all_countries')}</option>
               {COUNTRIES.map(country => (
                 <option key={country.code} value={country.code}>{country.name}</option>
               ))}
@@ -184,7 +187,7 @@ export default function DecorPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {decors.length === 0 ? (
           <div className="col-span-full py-12 text-center text-gray-500">
-            Aucun décor trouvé
+            {t('empty')}
           </div>
         ) : (
         decors.map((decor) => (
@@ -220,7 +223,7 @@ export default function DecorPage() {
                     ? 'bg-green-100 text-green-700' 
                     : 'bg-red-100 text-red-700'
                 }`}>
-                  {decor.isActive ? 'Actif' : 'Inactif'}
+                  {decor.isActive ? t('status.active') : t('status.inactive')}
                 </span>
               </div>
             </div>
@@ -248,20 +251,20 @@ export default function DecorPage() {
                         onClick={() => openEditModal(decor)}
                         className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 w-full"
                       >
-                        <Edit size={14} /> Modifier
+                        <Edit size={14} /> {t('actions.edit')}
                       </button>
                       <button 
                         onClick={() => handleToggleStatus(decor)}
                         className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 w-full"
                       >
                         {decor.isActive ? <EyeOff size={14} /> : <Eye size={14} />}
-                        {decor.isActive ? 'Désactiver' : 'Activer'}
+                        {decor.isActive ? t('actions.deactivate') : t('actions.activate')}
                       </button>
                       <button 
                         onClick={() => handleDeleteDecor(decor.id)}
                         className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full"
                       >
-                        <Trash2 size={14} /> Supprimer
+                        <Trash2 size={14} /> {t('actions.delete')}
                       </button>
                     </div>
                   )}
@@ -280,7 +283,7 @@ export default function DecorPage() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
               <h2 className="text-lg font-bold text-gray-900">
-                {editingDecor ? 'Modifier le décor' : 'Nouveau décor'}
+                {editingDecor ? t('modal.edit_title') : t('modal.new_title')}
               </h2>
               <button 
                 onClick={() => setIsModalOpen(false)}
@@ -293,21 +296,21 @@ export default function DecorPage() {
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nom du décor
+                  {t('form.name_label')}
                 </label>
                 <input 
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full p-3 border border-gray-300 rounded-xl outline-none focus:border-[#0D7BFF] focus:ring-2 focus:ring-[#0D7BFF]/20"
-                  placeholder="Ex: Bureau moderne"
+                  placeholder={t('form.name_placeholder')}
                   required
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Pays
+                  {t('form.country_label')}
                 </label>
                 <select 
                   value={formData.country}
@@ -322,7 +325,7 @@ export default function DecorPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Image
+                  {t('form.image_label')}
                 </label>
                 <input
                   type="file"
@@ -345,23 +348,23 @@ export default function DecorPage() {
                       {formData.image instanceof File ? (
                         <img 
                           src={URL.createObjectURL(formData.image)} 
-                          alt="Preview" 
+                          alt={t('form.image_preview')} 
                           className="max-h-32 mx-auto rounded-lg object-cover"
                         />
                       ) : typeof formData.image === 'string' && formData.image ? (
                         <img 
                           src={formData.image} 
-                          alt="Current" 
+                          alt={t('form.image_current')} 
                           className="max-h-32 mx-auto rounded-lg object-cover"
                         />
                       ) : null}
-                      <p className="text-sm text-[#0D7BFF]">Cliquez pour changer l&apos;image</p>
+                      <p className="text-sm text-[#0D7BFF]">{t('form.image_change')}</p>
                     </div>
                   ) : (
                     <>
                       <Upload size={32} className="text-gray-400 mx-auto mb-2" />
-                      <p className="text-sm text-gray-500">Cliquez pour uploader une image</p>
-                      <p className="text-xs text-gray-400 mt-1">PNG, JPG jusqu&apos;à 5MB</p>
+                      <p className="text-sm text-gray-500">{t('form.image_upload')}</p>
+                      <p className="text-xs text-gray-400 mt-1">{t('form.image_hint')}</p>
                     </>
                   )}
                 </label>
@@ -373,7 +376,7 @@ export default function DecorPage() {
                   onClick={() => setIsModalOpen(false)}
                   className="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
                 >
-                  Annuler
+                  {t('actions.cancel')}
                 </button>
                 <button 
                   type="submit"
@@ -381,7 +384,7 @@ export default function DecorPage() {
                   className="flex-1 px-4 py-3 text-sm font-medium text-white bg-[#0D7BFF] rounded-xl hover:bg-[#0a6ae0] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {saving && <Loader2 size={16} className="animate-spin" />}
-                  {editingDecor ? 'Enregistrer' : 'Créer'}
+                  {editingDecor ? t('actions.save') : t('actions.create')}
                 </button>
               </div>
             </form>

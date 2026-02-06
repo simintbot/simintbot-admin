@@ -4,6 +4,9 @@ import { User, LogOut, Menu, Settings } from 'lucide-react';
 import { Link, useRouter, usePathname } from '@/i18n/routing';
 import { useMobileSidebar } from './MobileSidebarContext';
 import { userService, User as AppUser } from '@/lib/services/user.service';
+import authService from '@/lib/api/services/auth.service';
+import { useTranslations } from 'next-intl';
+import LanguageSelector from '../LanguageSelector';
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -47,6 +50,7 @@ function ConfirmationModal({ isOpen, onClose, onConfirm, title, message, cancelT
 }
 
 export default function Navbar() {
+  const t = useTranslations('Navbar');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
@@ -87,20 +91,25 @@ export default function Navbar() {
   };
 
   const handleLogoutConfirm = () => {
-    // TODO: Implémenter la déconnexion
-    router.push('/login');
+    try {
+      authService.clearAuth();
+    } catch (e) {
+      // ignore
+    }
+    setShowLogoutModal(false);
+    router.replace('/login');
   };
 
   // Déterminer le titre de la page
   const getPageTitle = () => {
-    if (pathname.includes('/users')) return 'Utilisateurs';
-    if (pathname.includes('/planifications')) return 'Planifications';
-    if (pathname.includes('/interview/decor')) return 'Décors';
-    if (pathname.includes('/interview/jobs')) return 'Fiches Métiers';
-    if (pathname.includes('/interview/settings')) return 'Paramètres Interview';
-    if (pathname.includes('/settings/general')) return 'Informations Générales';
-    if (pathname.includes('/settings/legal')) return 'Informations Légales';
-    return 'Dashboard';
+    if (pathname.includes('/users')) return t('page_titles.users');
+    if (pathname.includes('/planifications')) return t('page_titles.planifications');
+    if (pathname.includes('/interview/decor')) return t('page_titles.decor');
+    if (pathname.includes('/interview/jobs')) return t('page_titles.jobs');
+    if (pathname.includes('/interview/settings')) return t('page_titles.interview_settings');
+    if (pathname.includes('/settings/general')) return t('page_titles.general_settings');
+    if (pathname.includes('/settings/legal')) return t('page_titles.legal_settings');
+    return t('page_titles.dashboard');
   };
 
   return (
@@ -116,12 +125,16 @@ export default function Navbar() {
             >
               <Menu size={20} />
             </button>
-            
             <h1 className="text-lg font-bold text-gray-800">{getPageTitle()}</h1>
           </div>
 
           {/* Right side */}
           <div className="flex items-center gap-3 md:gap-4">
+            {/* Language Selector */}
+            <div className="hidden sm:block">
+              <LanguageSelector variant="bordered" />
+            </div>
+
             {/* Profile dropdown */}
             <div className="relative" ref={profileRef}>
               <button 
@@ -143,23 +156,23 @@ export default function Navbar() {
                 <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
                   <div className="px-4 py-2 border-b border-gray-100">
                     <p className="font-semibold text-sm text-gray-800">
-                        {currentUser ? `${currentUser.first_name} ${currentUser.last_name}` : 'Administrateur'}
+                        {currentUser ? `${currentUser.first_name} ${currentUser.last_name}` : t('admin_label')}
                     </p>
-                    <p className="text-xs text-gray-400">{currentUser?.email || 'admin@simintbot.com'}</p>
+                    <p className="text-xs text-gray-400">{currentUser?.email || t('admin_email_fallback')}</p>
                   </div>
                   <Link 
                     href="/settings/general"
                     className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
                   >
                     <Settings size={16} />
-                    Paramètres
+                    {t('settings')}
                   </Link>
                   <button 
                     onClick={handleLogoutClick}
                     className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors w-full"
                   >
                     <LogOut size={16} />
-                    Déconnexion
+                    {t('logout')}
                   </button>
                 </div>
               )}
@@ -172,10 +185,10 @@ export default function Navbar() {
         isOpen={showLogoutModal}
         onClose={() => setShowLogoutModal(false)}
         onConfirm={handleLogoutConfirm}
-        title="Déconnexion"
-        message="Êtes-vous sûr de vouloir vous déconnecter de l'espace d'administration ?"
-        cancelText="Annuler"
-        confirmText="Déconnexion"
+        title={t('logout_modal.title')}
+        message={t('logout_modal.message')}
+        cancelText={t('logout_modal.cancel')}
+        confirmText={t('logout_modal.confirm')}
       />
     </>
   );

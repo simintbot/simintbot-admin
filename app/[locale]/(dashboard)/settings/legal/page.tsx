@@ -17,35 +17,36 @@ import {
 } from 'lucide-react';
 import { documentService } from '@/lib/services/document.service';
 import toast from 'react-hot-toast';
+import { useLocale, useTranslations } from 'next-intl';
 
-// Reuse supported languages
-const SUPPORTED_LANGUAGES = [
-    { code: 'en', label: 'Anglais (English)' },
-    { code: 'fr', label: 'Français' },
-    { code: 'es', label: 'Espagnol (Español)' },
-    { code: 'de', label: 'Allemand (Deutsch)' },
-    { code: 'it', label: 'Italien (Italiano)' },
-    { code: 'pt', label: 'Portugais (Português)' },
-    { code: 'zh', label: 'Chinois (Chinese)' },
-    { code: 'ja', label: 'Japonais (Japanese)' },
-    { code: 'ko', label: 'Coréen (Korean)' },
-    { code: 'ru', label: 'Russe (Russian)' },
-];
-
-const DOC_TYPES = [
-    { slug: 'about', label: 'À propos' },
-    { slug: 'privacy-policy', label: 'Politique de confidentialité' },
-    { slug: 'terms-of-use', label: 'Conditions d\'utilisation' },
-    { slug: 'legal-notice', label: 'Mentions légales' },
-];
+const SUPPORTED_LANGUAGE_CODES = ['en', 'fr', 'es', 'de', 'it', 'pt', 'zh', 'ja', 'ko', 'ru'];
+const DOC_TYPE_SLUGS = ['about', 'privacy-policy', 'terms-of-use', 'legal-notice'];
 
 // Composant éditeur WYSIWYG
 function WysiwygEditor({ 
   content, 
-  onChange 
+  onChange,
+  labels,
 }: { 
   content: string; 
   onChange: (content: string) => void;
+  labels: {
+    bold: string;
+    italic: string;
+    underline: string;
+    bullets: string;
+    numbered: string;
+    align_left: string;
+    align_center: string;
+    align_right: string;
+    insert_link: string;
+    format: string;
+    paragraph: string;
+    heading1: string;
+    heading2: string;
+    heading3: string;
+    link_prompt: string;
+  };
 }) {
   const editorRef = useRef<HTMLDivElement>(null);
   const istyping = useRef(false);
@@ -76,22 +77,22 @@ function WysiwygEditor({
   };
 
   const toolbarButtons = [
-    { icon: Bold, command: 'bold', tooltip: 'Gras' },
-    { icon: Italic, command: 'italic', tooltip: 'Italique' },
-    { icon: Underline, command: 'underline', tooltip: 'Souligné' },
+    { icon: Bold, command: 'bold', tooltip: labels.bold },
+    { icon: Italic, command: 'italic', tooltip: labels.italic },
+    { icon: Underline, command: 'underline', tooltip: labels.underline },
     { type: 'separator' },
-    { icon: List, command: 'insertUnorderedList', tooltip: 'Liste à puces' },
-    { icon: ListOrdered, command: 'insertOrderedList', tooltip: 'Liste numérotée' },
+    { icon: List, command: 'insertUnorderedList', tooltip: labels.bullets },
+    { icon: ListOrdered, command: 'insertOrderedList', tooltip: labels.numbered },
     { type: 'separator' },
-    { icon: AlignLeft, command: 'justifyLeft', tooltip: 'Aligner à gauche' },
-    { icon: AlignCenter, command: 'justifyCenter', tooltip: 'Centrer' },
-    { icon: AlignRight, command: 'justifyRight', tooltip: 'Aligner à droite' },
+    { icon: AlignLeft, command: 'justifyLeft', tooltip: labels.align_left },
+    { icon: AlignCenter, command: 'justifyCenter', tooltip: labels.align_center },
+    { icon: AlignRight, command: 'justifyRight', tooltip: labels.align_right },
     { type: 'separator' },
-    { icon: Link, command: 'createLink', tooltip: 'Insérer un lien', needsValue: true },
+    { icon: Link, command: 'createLink', tooltip: labels.insert_link, needsValue: true },
   ];
 
   const handleLinkClick = () => {
-    const url = prompt('Entrez l\'URL du lien:');
+    const url = prompt(labels.link_prompt);
     if (url) {
       execCommand('createLink', url);
     }
@@ -125,11 +126,11 @@ function WysiwygEditor({
           className="ml-2 p-1.5 text-sm border border-gray-200 rounded bg-white outline-none focus:border-[#0D7BFF]"
           defaultValue=""
         >
-          <option value="" disabled>Format</option>
-          <option value="p">Paragraphe</option>
-          <option value="h1">Titre 1</option>
-          <option value="h2">Titre 2</option>
-          <option value="h3">Titre 3</option>
+          <option value="" disabled>{labels.format}</option>
+          <option value="p">{labels.paragraph}</option>
+          <option value="h1">{labels.heading1}</option>
+          <option value="h2">{labels.heading2}</option>
+          <option value="h3">{labels.heading3}</option>
         </select>
       </div>
 
@@ -146,8 +147,10 @@ function WysiwygEditor({
 }
 
 export default function LegalSettingsPage() {
+  const t = useTranslations('LegalSettings');
+  const locale = useLocale();
   const [selectedSlug, setSelectedSlug] = useState('about');
-  const [selectedLang, setSelectedLang] = useState('fr');
+  const [selectedLang, setSelectedLang] = useState(locale);
   
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -155,6 +158,45 @@ export default function LegalSettingsPage() {
   const [loading, setLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [docExists, setDocExists] = useState(false);
+
+  const docTypeKeyMap: Record<string, string> = {
+    'about': 'about',
+    'privacy-policy': 'privacy_policy',
+    'terms-of-use': 'terms_of_use',
+    'legal-notice': 'legal_notice',
+  };
+
+  const supportedLanguages = React.useMemo(() => (
+    SUPPORTED_LANGUAGE_CODES.map((code) => ({
+      code,
+      label: t(`languages.${code}`),
+    }))
+  ), [t]);
+
+  const docTypes = React.useMemo(() => (
+    DOC_TYPE_SLUGS.map((slug) => ({
+      slug,
+      label: t(`doc_types.${docTypeKeyMap[slug]}`),
+    }))
+  ), [t]);
+
+  const editorLabels = React.useMemo(() => ({
+    bold: t('toolbar.bold'),
+    italic: t('toolbar.italic'),
+    underline: t('toolbar.underline'),
+    bullets: t('toolbar.bullets'),
+    numbered: t('toolbar.numbered'),
+    align_left: t('toolbar.align_left'),
+    align_center: t('toolbar.align_center'),
+    align_right: t('toolbar.align_right'),
+    insert_link: t('toolbar.insert_link'),
+    format: t('toolbar.format'),
+    paragraph: t('toolbar.paragraph'),
+    heading1: t('toolbar.heading1'),
+    heading2: t('toolbar.heading2'),
+    heading3: t('toolbar.heading3'),
+    link_prompt: t('toolbar.link_prompt'),
+  }), [t]);
 
   useEffect(() => {
     const fetchDocument = async () => {
@@ -215,26 +257,26 @@ export default function LegalSettingsPage() {
         if (docExists) {
             // Document/Translation found, simple update
             await documentService.update(selectedSlug, payload);
-            toast.success('Document mis à jour avec succès');
+            toast.success(t('success.updated'));
         } else {
             // No document/translation found for this locale.
             // Try creation (POST). If defaults to 409/Error (slug exists), fallback to update (PUT)
             try {
                 await documentService.create(payload);
                 setDocExists(true);
-                toast.success('Document créé avec succès');
+                toast.success(t('success.created'));
             } catch (createError: any) {
                 // Assuming 409 or 400 means "Slug already exists", so we add translation via PUT
                 // You might want to check createError.status === 409 specifically if your API returns that
                 console.warn('Creation failed, trying update (UPSERT) for translation...', createError);
                 await documentService.update(selectedSlug, payload);
                 setDocExists(true);
-                toast.success('Traduction ajoutée avec succès');
+                toast.success(t('success.translation_added'));
             }
         }
     } catch (error) {
         console.error('Error saving document', error);
-        toast.error('Erreur lors de l\'enregistrement');
+            toast.error(t('errors.save_failed'));
     } finally {
         setIsSaving(false);
     }
@@ -246,9 +288,9 @@ export default function LegalSettingsPage() {
         <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                 <FileText className="text-[#0D7BFF]" />
-                Informations Légales
+                {t('title')}
             </h1>
-            <p className="text-gray-500 text-sm mt-1">Gérez les pages légales et institutionnelles du site</p>
+              <p className="text-gray-500 text-sm mt-1">{t('subtitle')}</p>
         </div>
         
         {/* Language Selector */}
@@ -259,7 +301,7 @@ export default function LegalSettingsPage() {
                 onChange={(e) => setSelectedLang(e.target.value)}
                 className="text-sm font-medium bg-transparent border-none outline-none text-gray-700 cursor-pointer"
             >
-                {SUPPORTED_LANGUAGES.map((lang) => (
+              {supportedLanguages.map((lang) => (
                     <option key={lang.code} value={lang.code}>{lang.label}</option>
                 ))}
             </select>
@@ -270,7 +312,7 @@ export default function LegalSettingsPage() {
         {/* Sidebar Tabs */}
         <div className="w-full md:w-64 bg-gray-50/50 border-r border-gray-100 flex-shrink-0">
           <nav className="p-4 space-y-1">
-            {DOC_TYPES.map((doc) => (
+            {docTypes.map((doc) => (
               <button
                 key={doc.slug}
                 onClick={() => setSelectedSlug(doc.slug)}
@@ -298,14 +340,14 @@ export default function LegalSettingsPage() {
                         {/* Title Input */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Titre de la page ({selectedLang.toUpperCase()})
+                                {t('labels.title', { lang: selectedLang.toUpperCase() })}
                             </label>
                             <input 
                                 type="text"
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
                                 className="w-full p-3 border border-gray-300 rounded-xl outline-none focus:border-[#0D7BFF] focus:ring-2 focus:ring-[#0D7BFF]/20 transition-all font-medium text-lg placeholder:font-normal"
-                                placeholder={`Ex: ${DOC_TYPES.find(d => d.slug === selectedSlug)?.label}`}
+                                placeholder={t('labels.title_placeholder', { title: docTypes.find(d => d.slug === selectedSlug)?.label })}
                                 required
                             />
                         </div>
@@ -313,15 +355,16 @@ export default function LegalSettingsPage() {
                         {/* Editor */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Contenu HTML
+                                {t('labels.content')}
                             </label>
                             <WysiwygEditor 
                                 key={`${selectedSlug}-${selectedLang}`}
                                 content={content}
                                 onChange={setContent}
+                                labels={editorLabels}
                             />
                             <p className="text-xs text-gray-400 mt-2 text-right">
-                                {content.length} caractères • HTML brut supporté
+                                {t('labels.content_count', { count: content.length })}
                             </p>
                         </div>
                     </div>
@@ -331,7 +374,7 @@ export default function LegalSettingsPage() {
                         <div className="flex items-center gap-2">
                             <span className={`w-2 h-2 rounded-full ${docExists ? 'bg-green-500' : 'bg-gray-300'}`} />
                             <span className="text-xs text-gray-500">
-                                {docExists ? 'Document existant' : 'Nouveau brouillon'}
+                              {docExists ? t('status.existing') : t('status.draft')}
                             </span>
                         </div>
                         <button 
@@ -342,12 +385,12 @@ export default function LegalSettingsPage() {
                             {isSaving ? (
                                 <>
                                 <Loader2 size={18} className="animate-spin" />
-                                Enregistrement...
+                              {t('actions.saving')}
                                 </>
                             ) : (
                                 <>
                                 <Save size={18} />
-                                {docExists ? 'Mettre à jour' : 'Créer le document'}
+                              {docExists ? t('actions.update') : t('actions.create')}
                                 </>
                             )}
                         </button>

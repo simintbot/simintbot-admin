@@ -15,10 +15,13 @@ import {
 } from 'recharts';
 import { dashboardService, DashboardData } from '@/lib/services/dashboard.service';
 import toast from 'react-hot-toast';
+import { useLocale, useTranslations } from 'next-intl';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#0D7BFF'];
 
 export default function DashboardPage() {
+    const t = useTranslations('Dashboard');
+    const locale = useLocale();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -31,13 +34,13 @@ export default function DashboardPage() {
             }
         } catch (error) {
             console.error(error);
-            toast.error('Impossible de charger les données du dashboard');
+            toast.error(t('errors.load_failed'));
         } finally {
             setLoading(false);
         }
     };
     fetchData();
-  }, []);
+  }, [t]);
 
   if (loading) {
       return (
@@ -51,30 +54,30 @@ export default function DashboardPage() {
 
   const stats = [
     { 
-        label: 'Utilisateurs Total', 
+        label: t('stats.total_users'), 
         value: data.kpis.total_users, 
-        subtext: `+${data.kpis.new_users_30d} derniers 30j`,
+        subtext: t('stats.new_users_30d', { count: data.kpis.new_users_30d }),
         icon: Users, 
         color: 'blue' 
     },
     { 
-        label: 'Entretiens lancés', 
+        label: t('stats.total_interviews'), 
         value: data.kpis.total_interviews, 
-        subtext: 'Depuis le début',
+        subtext: t('stats.since_start'),
         icon: Video, 
         color: 'purple' 
     },
     { 
-        label: 'Terminés', 
+        label: t('stats.completed'), 
         value: data.kpis.completed_interviews, 
-        subtext: 'Entretiens complétés',
+        subtext: t('stats.completed_label'),
         icon: CheckCircle, 
         color: 'green' 
     },
     { 
-        label: 'Taux de complétion', 
+        label: t('stats.completion_rate'), 
         value: `${data.kpis.completion_rate}%`, 
-        subtext: 'Performance globale',
+        subtext: t('stats.global_performance'),
         icon: TrendingUp, 
         color: 'orange' 
     },
@@ -89,12 +92,12 @@ export default function DashboardPage() {
 
   const formatDate = (dateStr: string) => {
       const date = new Date(dateStr);
-      return new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit' }).format(date);
+      return new Intl.DateTimeFormat(locale, { day: '2-digit', month: '2-digit' }).format(date);
   }
 
   const formatFullDate = (dateStr: string) => {
       const date = new Date(dateStr);
-      return new Intl.DateTimeFormat('fr-FR', { 
+      return new Intl.DateTimeFormat(locale, { 
           day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' 
       }).format(date);
   }
@@ -103,8 +106,8 @@ export default function DashboardPage() {
     <div className="space-y-8 pb-12">
       {/* Welcome */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Tableau de Bord</h1>
-        <p className="text-gray-500 mt-1">Vue d'ensemble de l'activité sur SimintBot.</p>
+                <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+                <p className="text-gray-500 mt-1">{t('subtitle')}</p>
       </div>
 
       {/* Stats cards */}
@@ -140,7 +143,7 @@ export default function DashboardPage() {
                  <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
                      <BarChart2 size={20} />
                  </div>
-                 <h2 className="font-semibold text-gray-800">Activité des 30 derniers jours</h2>
+                 <h2 className="font-semibold text-gray-800">{t('activity_30d')}</h2>
              </div>
              <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -162,7 +165,7 @@ export default function DashboardPage() {
                         <Tooltip 
                             cursor={{fill: '#F3F4F6'}}
                             contentStyle={{borderRadius: '0.5rem', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
-                            labelFormatter={(date) => new Date(date).toLocaleDateString()}
+                            labelFormatter={(date) => new Date(date).toLocaleDateString(locale)}
                         />
                         <Bar dataKey="count" fill="#0D7BFF" radius={[4, 4, 0, 0]} />
                     </BarChart>
@@ -176,7 +179,7 @@ export default function DashboardPage() {
                  <div className="p-2 bg-purple-50 rounded-lg text-purple-600">
                      <PieChart size={20} />
                  </div>
-                 <h2 className="font-semibold text-gray-800">Secteurs Populaires</h2>
+                 <h2 className="font-semibold text-gray-800">{t('popular_sectors')}</h2>
              </div>
              <div className="h-[300px] w-full flex flex-col items-center justify-center">
                 {data.charts.sectors && data.charts.sectors.length > 0 ? (
@@ -200,7 +203,7 @@ export default function DashboardPage() {
                         </RePieChart>
                     </ResponsiveContainer>
                 ) : (
-                    <div className="text-gray-400 text-sm italic">Aucune donnée de secteur</div>
+                    <div className="text-gray-400 text-sm italic">{t('no_sector_data')}</div>
                 )}
                 
                 {/* Legend */}
@@ -220,17 +223,17 @@ export default function DashboardPage() {
       {/* Recent Activity */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-            <h2 className="font-semibold text-gray-800">Activité Récente</h2>
+            <h2 className="font-semibold text-gray-800">{t('recent_activity')}</h2>
         </div>
         <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
                 <thead className="text-gray-500 bg-gray-50/50 uppercase text-xs">
                     <tr>
-                        <th className="px-6 py-3 font-medium">Utilisateur</th>
-                        <th className="px-6 py-3 font-medium">Type</th>
-                        <th className="px-6 py-3 font-medium">Date</th>
-                        <th className="px-6 py-3 font-medium text-center">Score</th>
-                        <th className="px-6 py-3 font-medium text-right">Statut</th>
+                        <th className="px-6 py-3 font-medium">{t('table.user')}</th>
+                        <th className="px-6 py-3 font-medium">{t('table.type')}</th>
+                        <th className="px-6 py-3 font-medium">{t('table.date')}</th>
+                        <th className="px-6 py-3 font-medium text-center">{t('table.score')}</th>
+                        <th className="px-6 py-3 font-medium text-right">{t('table.status')}</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -259,7 +262,11 @@ export default function DashboardPage() {
                                 <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium capitalize 
                                     ${item.status === 'completed' ? 'bg-green-100 text-green-700' : 
                                       item.status === 'in_progress' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>
-                                    {item.status === 'completed' ? 'Terminé' : item.status === 'in_progress' ? 'En cours' : item.status}
+                                    {item.status === 'completed'
+                                      ? t('status.completed')
+                                      : item.status === 'in_progress'
+                                        ? t('status.in_progress')
+                                        : item.status}
                                 </span>
                             </td>
                         </tr>
@@ -267,7 +274,7 @@ export default function DashboardPage() {
                     {data.recent_activity.length === 0 && (
                         <tr>
                             <td colSpan={5} className="px-6 py-8 text-center text-gray-400 italic">
-                                Aucune activité récente
+                                {t('no_recent_activity')}
                             </td>
                         </tr>
                     )}

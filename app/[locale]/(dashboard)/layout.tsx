@@ -5,12 +5,15 @@ import { MobileSidebarProvider } from "@/components/dashboard/MobileSidebarConte
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import apiClient from "@/lib/api/client";
+import { useTranslations } from "next-intl";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const t = useTranslations("Layout");
+  const tCommon = useTranslations("Common");
   const router = useRouter();
   const [checkingAuth, setCheckingAuth] = useState(true);
 
@@ -32,7 +35,7 @@ export default function DashboardLayout({
   if (checkingAuth) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="text-center text-gray-500">Vérification d'authentification...</div>
+        <div className="text-center text-gray-500">{t("auth_checking")}</div>
       </div>
     );
   }
@@ -55,11 +58,11 @@ export default function DashboardLayout({
           {/* Footer */}
           <footer className="px-4 sm:px-6 py-3 bg-white border-t flex items-center justify-between text-xs text-gray-400">
             <div className="flex items-center gap-1">
-              <span className="font-semibold text-gray-800">SimintBot</span>
-              <span className="font-semibold text-blue-600">Admin</span>
+              <span className="font-semibold text-gray-800">{tCommon("brand_name")}</span>
+              <span className="font-semibold text-blue-600">{tCommon("brand_admin")}</span>
             </div>
             <div className="flex items-center gap-3 sm:gap-4">
-              <span>© 2026 SimintBot. Tous droits réservés.</span>
+              <span>{tCommon("footer_rights")}</span>
             </div>
           </footer>
         </div>

@@ -1,6 +1,6 @@
-import { redirect } from "next/navigation";
+import { redirect } from '@/i18n/routing';
 
 export default function Home() {
-  // Redirect to the default locale login page
-  redirect("/fr/login");
+  // Redirect to locale-aware login
+  redirect('/login');
 }

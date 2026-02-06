@@ -5,9 +5,12 @@ import { Sector, SectorFormData } from '@/lib/types';
 import { sectorService } from '@/lib/services/sector.service';
 import apiClient, { ApiError } from '@/lib/api/client';
 import authService from '@/lib/api/services/auth.service';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
+import { useLocale, useTranslations } from 'next-intl';
 
 export default function SectorsPage() {
+  const t = useTranslations('Sectors');
+  const locale = useLocale();
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -29,7 +32,7 @@ export default function SectorsPage() {
     if (error && typeof error === 'object' && 'message' in (error as any)) {
       return (error as any).message;
     }
-    return String(error ?? 'Erreur inconnue');
+    return String(error ?? t('errors.unknown'));
   };
 
   const ensureToken = () => {
@@ -115,7 +118,7 @@ export default function SectorsPage() {
   };
 
   const handleDeleteSector = async (sectorId: string) => {
-    const ok = confirm('Supprimer ce secteur ?');
+    const ok = confirm(t('confirm_delete'));
     if (!ok) return;
     try {
       if (!ensureToken()) return;
@@ -154,14 +157,14 @@ export default function SectorsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Secteurs d&apos;activités</h1>
-          <p className="text-gray-500 text-sm mt-1">{filteredSectors.length} secteur(s)</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+          <p className="text-gray-500 text-sm mt-1">{t('count', { count: filteredSectors.length })}</p>
         </div>
         <button
           onClick={openCreateModal}
           className="bg-[#0D7BFF] text-white px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-[#0a6ae0] transition-colors"
         >
-          <Plus size={18} /> Nouveau secteur
+          <Plus size={18} /> {t('actions.add')}
         </button>
       </div>
 
@@ -172,7 +175,7 @@ export default function SectorsPage() {
             <Search size={18} className="text-gray-400" />
             <input
               type="text"
-              placeholder="Rechercher un secteur..."
+              placeholder={t('filters.search')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="bg-transparent outline-none text-sm flex-1 text-gray-600"
@@ -185,9 +188,9 @@ export default function SectorsPage() {
               onChange={(e) => setStatusFilter(e.target.value as any)}
               className="bg-gray-50 border-0 rounded-xl px-4 py-2.5 text-sm text-gray-600 outline-none focus:ring-2 focus:ring-[#0D7BFF]"
             >
-              <option value="all">Tous les statuts</option>
-              <option value="active">Actifs</option>
-              <option value="inactive">Inactifs</option>
+              <option value="all">{t('filters.all_statuses')}</option>
+              <option value="active">{t('filters.active')}</option>
+              <option value="inactive">{t('filters.inactive')}</option>
             </select>
           </div>
         </div>
@@ -204,17 +207,17 @@ export default function SectorsPage() {
             <table className="w-full">
               <thead>
                 <tr className="bg-gray-50 text-left text-xs font-semibold text-gray-500">
-                  <th className="px-6 py-4">Nom</th>
-                  <th className="px-6 py-4">Description</th>
-                  <th className="px-6 py-4">Statut</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
+                  <th className="px-6 py-4">{t('table.name')}</th>
+                  <th className="px-6 py-4">{t('table.description')}</th>
+                  <th className="px-6 py-4">{t('table.status')}</th>
+                  <th className="px-6 py-4 text-right">{t('table.actions')}</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredSectors.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="px-6 py-10 text-center text-sm text-gray-500">
-                      Aucun secteur trouvé
+                      {t('empty')}
                     </td>
                   </tr>
                 ) : (
@@ -224,25 +227,25 @@ export default function SectorsPage() {
                         <div className="font-semibold text-gray-900">{sector.name}</div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm text-gray-600 line-clamp-2">{sector.description || '—'}</div>
+                        <div className="text-sm text-gray-600 line-clamp-2">{sector.description || t('table.no_description')}</div>
                       </td>
                       <td className="px-6 py-4">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${sector.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                          {sector.isActive ? 'Actif' : 'Inactif'}
+                          {sector.isActive ? t('status.active') : t('status.inactive')}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => openEditModal(sector)}
-                            title="Modifier"
+                            title={t('actions.edit')}
                             className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
                           >
                             <Edit size={16} className="text-gray-500" />
                           </button>
                           <button
                             onClick={() => handleToggleStatus(sector)}
-                            title={sector.isActive ? 'Désactiver' : 'Activer'}
+                            title={sector.isActive ? t('actions.deactivate') : t('actions.activate')}
                             className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
                           >
                             {sector.isActive ? (
@@ -253,7 +256,7 @@ export default function SectorsPage() {
                           </button>
                           <button
                             onClick={() => handleDeleteSector(sector.id)}
-                            title="Supprimer"
+                            title={t('actions.delete')}
                             className="p-2 rounded-lg hover:bg-red-50 transition-colors"
                           >
                             <Trash2 size={16} className="text-red-500" />
@@ -271,21 +274,21 @@ export default function SectorsPage() {
 
       {/* Pagination */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">Page {page}</p>
+        <p className="text-sm text-gray-500">{t('pagination.page', { page })}</p>
         <div className="flex gap-2">
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
             className="px-3 py-2 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50"
           >
-            Précédent
+            {t('pagination.prev')}
           </button>
           <button
             onClick={() => setPage((p) => p + 1)}
             disabled={!hasMore}
             className="px-3 py-2 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50"
           >
-            Suivant
+            {t('pagination.next')}
           </button>
         </div>
       </div>
@@ -296,7 +299,7 @@ export default function SectorsPage() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
               <h2 className="text-lg font-bold text-gray-900">
-                {editingSector ? 'Modifier le secteur' : 'Nouveau secteur'}
+                {editingSector ? t('modal.edit_title') : t('modal.new_title')}
               </h2>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -307,23 +310,23 @@ export default function SectorsPage() {
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.name_label')}</label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full p-3 border border-gray-300 rounded-xl outline-none focus:border-[#0D7BFF] focus:ring-2 focus:ring-[#0D7BFF]/20"
-                  placeholder="Ex: Technologie"
+                  placeholder={t('form.name_placeholder')}
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.description_label')}</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="w-full p-3 border border-gray-300 rounded-xl outline-none focus:border-[#0D7BFF] focus:ring-2 focus:ring-[#0D7BFF]/20"
-                  placeholder="Décrivez le secteur..."
+                  placeholder={t('form.description_placeholder')}
                   rows={4}
                 />
               </div>
@@ -335,7 +338,7 @@ export default function SectorsPage() {
                   onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                   className="h-4 w-4 rounded border-gray-300 text-[#0D7BFF] focus:ring-[#0D7BFF]"
                 />
-                <label htmlFor="sector-active" className="text-sm text-gray-700">Secteur actif</label>
+                <label htmlFor="sector-active" className="text-sm text-gray-700">{t('form.active_label')}</label>
               </div>
               <div className="flex gap-3 pt-2">
                 <button
@@ -343,7 +346,7 @@ export default function SectorsPage() {
                   onClick={() => setIsModalOpen(false)}
                   className="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
                 >
-                  Annuler
+                  {t('actions.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -351,7 +354,7 @@ export default function SectorsPage() {
                   className="flex-1 px-4 py-3 text-sm font-medium text-white bg-[#0D7BFF] rounded-xl hover:bg-[#0a6ae0] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {saving && <Loader2 size={16} className="animate-spin" />}
-                  {editingSector ? 'Enregistrer' : 'Créer'}
+                  {editingSector ? t('actions.save') : t('actions.create')}
                 </button>
               </div>
             </form>

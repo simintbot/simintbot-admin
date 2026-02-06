@@ -2,8 +2,12 @@
 import React, { useState } from 'react';
 import { Link } from '@/i18n/routing';
 import { Loader2, ArrowLeft, Mail } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import LanguageSelector from '@/components/LanguageSelector';
 
 export default function ForgotPasswordPage() {
+  const t = useTranslations('ForgotPassword');
+  const tCommon = useTranslations('Common');
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [email, setEmail] = useState('');
@@ -39,33 +43,34 @@ export default function ForgotPasswordPage() {
           <div className="text-2xl font-bold flex items-center">
             SimintBot <span className="text-[#0D7BFF] ml-1">Admin</span>
           </div>
+          <LanguageSelector />
         </div>
 
         <div className="max-w-md mx-auto w-full flex-grow flex flex-col justify-center min-h-0">
           {/* Lien retour */}
           <Link href="/login" className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-6 w-fit">
             <ArrowLeft size={18} />
-            <span>Retour à la connexion</span>
+            <span>{t('back_to_login')}</span>
           </Link>
 
           {!isSubmitted ? (
             <>
-              <h1 className="text-2xl font-bold mb-2">Mot de passe oublié ?</h1>
+              <h1 className="text-2xl font-bold mb-2">{t('title')}</h1>
               <p className="text-gray-500 mb-8">
-                Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe.
+                {t('subtitle')}
               </p>
 
               {/* Formulaire */}
               <form className="space-y-4" onSubmit={handleSubmit}>
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                    Email
+                    {t('email_label')}
                   </label>
                   <input 
                     type="email" 
                     id="email"
                     name="email"
-                    placeholder="admin@simintbot.com"
+                    placeholder={t('email_placeholder')}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full p-3 border border-gray-300 rounded-xl outline-none focus:border-[#0D7BFF] focus:ring-2 focus:ring-[#0D7BFF]/20 transition-all"
@@ -85,10 +90,10 @@ export default function ForgotPasswordPage() {
                   {isLoading ? (
                     <>
                       <Loader2 className="animate-spin" size={20} />
-                      <span>Envoi en cours...</span>
+                      <span>{t('sending')}</span>
                     </>
                   ) : (
-                    "Envoyer le lien de réinitialisation"
+                    t('submit')
                   )}
                 </button>
               </form>
@@ -99,15 +104,15 @@ export default function ForgotPasswordPage() {
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Mail className="w-8 h-8 text-green-600" />
               </div>
-              <h1 className="text-2xl font-bold mb-2">Email envoyé !</h1>
+              <h1 className="text-2xl font-bold mb-2">{t('success_title')}</h1>
               <p className="text-gray-500 mb-8">
-                Si un compte existe avec l&apos;adresse <strong>{email}</strong>, vous recevrez un email avec les instructions pour réinitialiser votre mot de passe.
+                {t('success_message', { email })}
               </p>
               <Link 
                 href="/login" 
                 className="inline-flex items-center justify-center gap-2 bg-[#0D7BFF] text-white py-3 px-6 rounded-xl font-bold hover:bg-[#0a6ae0] transition-all"
               >
-                Retour à la connexion
+                {t('back_to_login')}
               </Link>
             </div>
           )}
@@ -115,7 +120,7 @@ export default function ForgotPasswordPage() {
 
         {/* Footer */}
         <div className="text-center text-gray-400 text-sm mt-8">
-          © 2026 SimintBot. Tous droits réservés.
+          {tCommon('footer_rights')}
         </div>
       </div>
 
@@ -128,10 +133,8 @@ export default function ForgotPasswordPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
               </svg>
             </div>
-            <h2 className="text-3xl font-bold mb-4">Récupération de compte</h2>
-            <p className="text-white/80 text-lg">
-              Pas de panique ! Nous allons vous aider à récupérer l&apos;accès à votre compte administrateur.
-            </p>
+            <h2 className="text-3xl font-bold mb-4">{t('right_title')}</h2>
+            <p className="text-white/80 text-lg">{t('right_description')}</p>
           </div>
         </div>
         {/* Éléments décoratifs */}

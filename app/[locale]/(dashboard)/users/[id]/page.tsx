@@ -1,13 +1,14 @@
 "use client";
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { 
   ArrowLeft, User as UserIcon, FileText, History, Mail, Phone, MapPin, 
   Calendar, Briefcase, GraduationCap, Award, Video, Clock,
   CheckCircle, XCircle, ChevronLeft, ChevronRight, Plus, TrendingUp, X, Loader2
 } from 'lucide-react';
 import { userService, User as ServiceUser, CVProfile, InterviewSession, InterviewSessionDetail, AgendaEvent } from '@/lib/services/user.service';
+import { useLocale, useTranslations } from 'next-intl';
 
 // Types
 interface Interview {
@@ -55,12 +56,6 @@ const mockInterviews = [
 type TabType = 'info' | 'cv' | 'history' | 'planifications';
 
 // Helpers pour le calendrier
-const MONTHS_FR = [
-  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
-];
-
-const DAYS_FR = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
 function getDaysInMonth(year: number, month: number): number {
   return new Date(year, month + 1, 0).getDate();
@@ -83,6 +78,8 @@ function parseDate(dateStr: string): { year: number; month: number; day: number 
 
 export default function UserDetailsPage() {
   const params = useParams();
+  const t = useTranslations('UserDetails');
+  const locale = useLocale();
   const userId = params.id as string;
   const [activeTab, setActiveTab] = useState<TabType>('info');
   const [user, setUser] = useState<User | null>(null);
@@ -102,6 +99,14 @@ export default function UserDetailsPage() {
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedInterview, setSelectedInterview] = useState<InterviewSessionDetail | any | null>(null);
+
+  const weekdayLabels = useMemo(() => {
+    const baseDate = new Date(2021, 5, 7);
+    return Array.from({ length: 7 }, (_, i) =>
+      new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() + i)
+        .toLocaleDateString(locale, { weekday: 'short' })
+    );
+  }, [locale]);
 
   // Fetch User & Stats
   useEffect(() => {
@@ -314,10 +319,10 @@ export default function UserDetailsPage() {
   };
 
   const tabs = [
-    { id: 'info' as TabType, label: 'Informations', icon: UserIcon },
-    { id: 'cv' as TabType, label: 'CV Complet', icon: FileText },
-    { id: 'history' as TabType, label: 'Historique Entretiens', icon: History },
-    { id: 'planifications' as TabType, label: 'Planifications', icon: Calendar },
+    { id: 'info' as TabType, label: t('tabs.info'), icon: UserIcon },
+    { id: 'cv' as TabType, label: t('tabs.cv'), icon: FileText },
+    { id: 'history' as TabType, label: t('tabs.history'), icon: History },
+    { id: 'planifications' as TabType, label: t('tabs.planifications'), icon: Calendar },
   ];
 
   if (loading) {
@@ -329,7 +334,7 @@ export default function UserDetailsPage() {
   }
 
   if (!user) {
-    return <div className="p-8">Utilisateur non trouvé</div>;
+    return <div className="p-8">{t('not_found')}</div>;
   }
 
   return (
@@ -351,7 +356,7 @@ export default function UserDetailsPage() {
             ? 'bg-green-100 text-green-700' 
             : 'bg-red-100 text-red-700'
         }`}>
-          {user.is_active ? 'Actif' : 'Inactif'}
+          {user.is_active ? t('status.active') : t('status.inactive')}
         </span>
       </div>
 
@@ -386,7 +391,7 @@ export default function UserDetailsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-6">
                 <div>
-                   <h3 className="font-semibold text-gray-900 mb-4">Informations personnelles</h3>
+                   <h3 className="font-semibold text-gray-900 mb-4">{t('sections.personal')}</h3>
                    <div className="space-y-3">
                     <div className="flex items-center gap-3 text-sm">
                       <span className="text-gray-400 w-5 font-semibold">ID</span>
@@ -402,11 +407,15 @@ export default function UserDetailsPage() {
                     </div>
                     <div className="flex items-center gap-3 text-sm">
                       <MapPin size={16} className="text-gray-400" />
-                      <span className="text-gray-600">{user.address || 'Non renseigné'}</span>
+                      <span className="text-gray-600">{user.address || t('labels.not_provided')}</span>
                     </div>
                     <div className="flex items-center gap-3 text-sm">
                       <Calendar size={16} className="text-gray-400" />
-                      <span className="text-gray-600">Né le {user.birth_date || 'Non renseigné'}</span>
+                      <span className="text-gray-600">
+                        {user.birth_date
+                          ? t('labels.born', { date: new Date(user.birth_date).toLocaleDateString(locale) })
+                          : t('labels.not_provided')}
+                      </span>
                     </div>
                     {user.nationality && (
                         <div className="flex items-center gap-3 text-sm">
@@ -419,7 +428,7 @@ export default function UserDetailsPage() {
 
                 {user.biography && (
                     <div>
-                        <h3 className="font-semibold text-gray-900 mb-2">Biographie</h3>
+                    <h3 className="font-semibold text-gray-900 mb-2">{t('sections.biography')}</h3>
                         <p className="text-sm text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-xl">
                             {user.biography}
                         </p>
@@ -428,7 +437,7 @@ export default function UserDetailsPage() {
                 
                 {user.social_links && Object.keys(user.social_links).length > 0 && (
                     <div>
-                        <h3 className="font-semibold text-gray-900 mb-2">Réseaux sociaux</h3>
+                    <h3 className="font-semibold text-gray-900 mb-2">{t('sections.social')}</h3>
                         <div className="flex gap-2 flex-wrap">
                             {Object.entries(user.social_links).map(([platform, link]) => (
                                 <a 
@@ -446,21 +455,25 @@ export default function UserDetailsPage() {
                 )}
               </div>
               <div className="space-y-4">
-                <h3 className="font-semibold text-gray-900">Statistiques</h3>
+                <h3 className="font-semibold text-gray-900">{t('sections.stats')}</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-[#0D7BFF]/10 rounded-xl p-4">
                     <p className="text-2xl font-bold text-[#0D7BFF]">{user.interview_count || 0}</p>
-                    <p className="text-sm text-gray-600">Entretiens</p>
+                    <p className="text-sm text-gray-600">{t('labels.interviews')}</p>
                   </div>
                   <div className="bg-green-50 rounded-xl p-4">
                     <p className="text-2xl font-bold text-green-600">
                       {user.average_score || 0}%
                     </p>
-                    <p className="text-sm text-gray-600">Score moyen</p>
+                    <p className="text-sm text-gray-600">{t('labels.avg_score')}</p>
                   </div>
                 </div>
                 <div className="text-sm text-gray-500">
-                  <p>Inscrit le {user.created_at ? new Date(user.created_at).toLocaleDateString() : '-'}</p>
+                  <p>
+                    {user.created_at
+                      ? t('labels.signed_up', { date: new Date(user.created_at).toLocaleDateString(locale) })
+                      : t('labels.signed_up', { date: '-' })}
+                  </p>
                 </div>
               </div>
             </div>
@@ -474,7 +487,7 @@ export default function UserDetailsPage() {
                 </div>
             ) : !cvData ? (
                  <div className="text-center p-10 text-gray-500">
-                    Aucune donnée de CV disponible.
+                  {t('cv.empty')}
                  </div>
             ) : (
             <div className="space-y-8">
@@ -485,7 +498,7 @@ export default function UserDetailsPage() {
                     <p className="text-gray-600 mt-2">{cvData.summary}</p>
                     <div className="flex gap-4 mt-3 text-sm text-gray-500">
                         <span className="flex items-center gap-1">
-                             <Briefcase size={14} /> {cvData.years_of_experience} ans d'expérience
+                          <Briefcase size={14} /> {t('cv.experience_years', { count: cvData.years_of_experience })}
                         </span>
                         <span className="flex items-center gap-1">
                              <Award size={14} /> {cvData.primary_domain}
@@ -500,7 +513,7 @@ export default function UserDetailsPage() {
                         className="flex items-center gap-2 px-4 py-2 bg-[#0D7BFF] text-white rounded-lg text-sm font-medium hover:bg-[#0b66d6] transition-colors"
                     >
                         <FileText size={16} />
-                        Voir le CV original
+                      {t('cv.original')}
                     </a>
                 )}
               </div>
@@ -509,7 +522,7 @@ export default function UserDetailsPage() {
               <div>
                 <h4 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
                   <Briefcase size={18} />
-                  Expériences professionnelles
+                  {t('cv.experience_title')}
                 </h4>
                 <div className="space-y-6">
                   {cvData.experiences.map((exp, index) => (
@@ -540,7 +553,7 @@ export default function UserDetailsPage() {
                   <div>
                     <h4 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
                       <Briefcase size={18} />
-                      Projets
+                      {t('cv.projects')}
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {cvData.projects.map((project, idx) => (
@@ -549,7 +562,7 @@ export default function UserDetailsPage() {
                                     <h5 className="font-semibold text-gray-900">{project.title}</h5>
                                     {project.link && (
                                         <a href={project.link} target="_blank" rel="noreferrer" className="text-[#0D7BFF] hover:underline text-xs">
-                                            Voir
+                                        {t('cv.view')}
                                         </a>
                                     )}
                                 </div>
@@ -576,7 +589,7 @@ export default function UserDetailsPage() {
               <div>
                 <h4 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
                   <GraduationCap size={18} />
-                  Formation
+                  {t('cv.education')}
                 </h4>
                 <div className="space-y-4">
                   {cvData.education.map((edu, index) => (
@@ -601,7 +614,7 @@ export default function UserDetailsPage() {
               {/* Compétences & Langues */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div>
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4">Hard Skills</h4>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4">{t('cv.hard_skills')}</h4>
                     <div className="flex flex-wrap gap-2">
                         {cvData.skills.hard_skills.map((skill) => (
                             <span key={skill} className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm border border-gray-200">
@@ -612,7 +625,7 @@ export default function UserDetailsPage() {
                   </div>
                   
                   <div>
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4">Soft Skills</h4>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4">{t('cv.soft_skills')}</h4>
                     <div className="flex flex-wrap gap-2">
                         {cvData.skills.soft_skills.map((skill) => (
                             <span key={skill} className="px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-sm border border-green-100">
@@ -626,7 +639,7 @@ export default function UserDetailsPage() {
               {/* Langues */}
               {cvData.languages && cvData.languages.length > 0 && (
                   <div>
-                      <h4 className="text-lg font-semibold text-gray-900 mb-4">Langues</h4>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4">{t('cv.languages')}</h4>
                       <div className="flex gap-4">
                           {cvData.languages.map((lang, idx) => (
                               <div key={idx} className="flex flex-col items-center bg-gray-50 p-3 rounded-xl min-w-[100px]">
@@ -649,7 +662,7 @@ export default function UserDetailsPage() {
                 </div>
             ) : !interviewsData || interviewsData.items.length === 0 ? (
                  <div className="text-center p-10 text-gray-500">
-                    Aucun historique d'entretien trouvé.
+                  {t('history.empty')}
                  </div>
             ) : (
             <div className="space-y-4">
@@ -666,7 +679,9 @@ export default function UserDetailsPage() {
                       <Video size={20} className={interview.status === 'completed' ? 'text-[#0D7BFF]' : 'text-orange-600'} />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">Entretien {new Date(interview.created_at).toLocaleDateString()}</p>
+                      <p className="font-medium text-gray-900">
+                        {t('history.interview_label', { date: new Date(interview.created_at).toLocaleDateString(locale) })}
+                      </p>
                       <div className="flex items-center gap-2 text-sm text-gray-500">
                         <span>{interview.recruiter_name}</span>
                         <span>•</span>
@@ -676,7 +691,7 @@ export default function UserDetailsPage() {
                             <span>•</span>
                             <span className="flex items-center gap-1">
                               <Clock size={12} />
-                              {interview.duration_minutes} min
+                              {interview.duration_minutes} {t('units.minutes_short')}
                             </span>
                           </>
                         )}
@@ -689,7 +704,13 @@ export default function UserDetailsPage() {
                         interview.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
                         'bg-gray-100 text-gray-700'
                       }`}>
-                        {interview.status === 'completed' ? 'Terminé' : interview.status === 'in_progress' ? 'En cours' : interview.status}
+                        {interview.status === 'completed'
+                          ? t('history.status.completed')
+                          : interview.status === 'in_progress'
+                            ? t('history.status.in_progress')
+                            : interview.status === 'scheduled'
+                              ? t('history.status.scheduled')
+                              : interview.status}
                     </span>
                     {interview.status === 'completed' ? (
                       <CheckCircle size={18} className="text-green-500" />
@@ -720,7 +741,7 @@ export default function UserDetailsPage() {
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-4">
                       <h3 className="text-xl font-bold text-gray-900">
-                        {MONTHS_FR[currentMonth]} {currentYear}
+                        {new Date(currentYear, currentMonth, 1).toLocaleString(locale, { month: 'long' })} {currentYear}
                       </h3>
                       <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
                         <button 
@@ -733,7 +754,7 @@ export default function UserDetailsPage() {
                           onClick={goToToday}
                           className="px-3 py-2 bg-white rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50"
                         >
-                          Aujourd&apos;hui
+                          {t('calendar.today')}
                         </button>
                         <button 
                           onClick={goToNextMonth}
@@ -746,11 +767,11 @@ export default function UserDetailsPage() {
                     <div className="flex items-center gap-4">
                       <span className="flex items-center gap-2 text-xs text-gray-500">
                         <span className="w-3 h-3 rounded-full bg-[#0D7BFF]"></span>
-                        Complété
+                        {t('calendar.completed')}
                       </span>
                       <span className="flex items-center gap-2 text-xs text-gray-500">
                         <span className="w-3 h-3 rounded-full bg-amber-500"></span>
-                        Planifié
+                        {t('calendar.planned')}
                       </span>
                     </div>
                   </div>
@@ -759,7 +780,7 @@ export default function UserDetailsPage() {
                   <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
                     {/* Jours de la semaine */}
                     <div className="grid grid-cols-7 bg-gradient-to-r from-[#0D7BFF] to-[#0a6ae0]">
-                      {DAYS_FR.map((day) => (
+                      {weekdayLabels.map((day) => (
                         <div key={day} className="py-3 text-center text-xs font-semibold text-white/90 uppercase tracking-wider">
                           {day}
                         </div>
@@ -809,13 +830,13 @@ export default function UserDetailsPage() {
                                 <p className={`text-[10px] font-semibold truncate ${
                                   event.status === 'scheduled' ? 'text-amber-700' : 'text-[#0D7BFF]'
                                 }`}>
-                                  {event.title || 'Entretien'}
+                                  {event.title || t('calendar.default_title')}
                                 </p>
                                 <p className={`text-[9px] flex items-center gap-1 ${
                                   event.status === 'scheduled' ? 'text-amber-600/70' : 'text-[#0D7BFF]/70'
                                 }`}>
                                   <Clock size={8} />
-                                  {new Date(event.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                  {new Date(event.start_time).toLocaleTimeString(locale, {hour: '2-digit', minute:'2-digit'})}
                                 </p>
                               </div>
                             ))}
@@ -844,13 +865,16 @@ export default function UserDetailsPage() {
                         <div className="w-8 h-8 bg-gradient-to-r from-orange-400 to-orange-500 rounded-lg flex items-center justify-center">
                           <Clock size={16} className="text-white" />
                         </div>
-                        {selectedDate ? `Le ${new Date(selectedDate).toLocaleDateString()}` : 'À venir ce mois'}
+                        {selectedDate
+                          ? t('calendar.selected_date', { date: new Date(selectedDate).toLocaleDateString(locale) })
+                          : t('calendar.upcoming_month')}
                       </h4>
                       <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-medium">
-                         {selectedDate 
-                            ? (eventsByDate[selectedDate]?.length || 0) 
+                         {t('calendar.events_count', {
+                          count: selectedDate
+                            ? (eventsByDate[selectedDate]?.length || 0)
                             : calendarEvents.filter(e => e.status === 'scheduled').length
-                         } event(s)
+                         })}
                       </span>
                     </div>
                     
@@ -867,12 +891,12 @@ export default function UserDetailsPage() {
                                 <Video size={20} className="text-orange-600" />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="font-semibold text-gray-900 truncate">{event.title || 'Entretien'}</p>
+                                <p className="font-semibold text-gray-900 truncate">{event.title || t('calendar.default_title')}</p>
                                 <p className="text-sm text-gray-500 mt-0.5">{event.description}</p>
                                 <div className="flex items-center gap-2 mt-2">
                                   <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-md font-medium flex items-center gap-1">
                                     <Calendar size={10} />
-                                    {new Date(event.start_time).toLocaleDateString()} - {new Date(event.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                    {new Date(event.start_time).toLocaleDateString(locale)} - {new Date(event.start_time).toLocaleTimeString(locale, {hour: '2-digit', minute:'2-digit'})}
                                   </span>
                                 </div>
                               </div>
@@ -884,7 +908,7 @@ export default function UserDetailsPage() {
                           <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
                             <Calendar size={20} className="text-orange-400" />
                           </div>
-                          <p className="text-sm text-gray-500">Aucun événement</p>
+                          <p className="text-sm text-gray-500">{t('calendar.no_events')}</p>
                         </div>
                       )}
                     </div>
@@ -922,11 +946,13 @@ export default function UserDetailsPage() {
                   <div>
                     <h3 className="text-xl font-bold text-white">
                         {/* @ts-ignore */}
-                        {selectedInterview.job_position?.title || selectedInterview.job || 'Entretien'}
+                      {selectedInterview.job_position?.title || selectedInterview.job || t('calendar.default_title')}
                     </h3>
                     <p className="text-white/80 text-sm mt-1">
                         {/* @ts-ignore */}
-                        {selectedInterview.recruiter_name ? `Avec ${selectedInterview.recruiter_name}` : selectedInterview.type}
+                      {selectedInterview.recruiter_name
+                        ? t('modal.with_recruiter', { name: selectedInterview.recruiter_name })
+                        : selectedInterview.type}
                     </p>
                   </div>
                 </div>
@@ -946,37 +972,41 @@ export default function UserDetailsPage() {
                 <div className="bg-gray-50 rounded-xl p-4">
                   <div className="flex items-center gap-2 text-gray-500 text-sm mb-1">
                     <Calendar size={14} />
-                    Date
+                    {t('modal.date')}
                   </div>
                   <p className="font-semibold text-gray-900">
                     {/* @ts-ignore */}
-                    {new Date(selectedInterview.started_at || selectedInterview.date).toLocaleDateString()}
+                    {new Date(selectedInterview.started_at || selectedInterview.date).toLocaleDateString(locale)}
                   </p>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-4">
                   <div className="flex items-center gap-2 text-gray-500 text-sm mb-1">
                     <Clock size={14} />
-                    Heure
+                    {t('modal.time')}
                   </div>
                   <p className="font-semibold text-gray-900">
                     {/* @ts-ignore */}
-                    {selectedInterview.started_at ? new Date(selectedInterview.started_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : selectedInterview.time || '-'}
+                    {selectedInterview.started_at
+                      ? new Date(selectedInterview.started_at).toLocaleTimeString(locale, {hour: '2-digit', minute:'2-digit'})
+                      : selectedInterview.time || '-'}
                   </p>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-4">
                   <div className="flex items-center gap-2 text-gray-500 text-sm mb-1">
                     <Clock size={14} />
-                    Durée
+                    {t('modal.duration')}
                   </div>
                   <p className="font-semibold text-gray-900">
                     {/* @ts-ignore */}
-                    {selectedInterview.duration_minutes ? `${selectedInterview.duration_minutes} min` : selectedInterview.duration}
+                    {selectedInterview.duration_minutes
+                      ? `${selectedInterview.duration_minutes} ${t('units.minutes_short')}`
+                      : selectedInterview.duration}
                   </p>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-4">
                   <div className="flex items-center gap-2 text-gray-500 text-sm mb-1">
                     <Briefcase size={14} />
-                    Statut
+                    {t('modal.status')}
                   </div>
                   <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
                     selectedInterview.status === 'scheduled' || selectedInterview.status === 'in_progress'
@@ -986,12 +1016,12 @@ export default function UserDetailsPage() {
                     {selectedInterview.status === 'scheduled' || selectedInterview.status === 'in_progress' ? (
                       <>
                         <Clock size={10} />
-                        {selectedInterview.status === 'in_progress' ? 'En cours' : 'Planifié'}
+                        {selectedInterview.status === 'in_progress' ? t('modal.in_progress') : t('modal.scheduled')}
                       </>
                     ) : (
                       <>
                         <CheckCircle size={10} />
-                        Terminé
+                        {t('modal.completed')}
                       </>
                     )}
                   </span>
@@ -1002,7 +1032,7 @@ export default function UserDetailsPage() {
               {/* @ts-ignore */}
               {(selectedInterview.report_data?.gpt_report || selectedInterview.description) && (
                 <div className="max-h-60 overflow-y-auto">
-                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Rapport / Description</h4>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">{t('modal.report')}</h4>
                   <div className="text-gray-600 text-sm leading-relaxed bg-gray-50 rounded-xl p-4 whitespace-pre-wrap">
                     {/* @ts-ignore */}
                     {selectedInterview.report_data?.gpt_report || selectedInterview.description}
@@ -1017,7 +1047,7 @@ export default function UserDetailsPage() {
                 onClick={closeModal}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
               >
-                Fermer
+                {t('modal.close')}
               </button>
             </div>
           </div>
