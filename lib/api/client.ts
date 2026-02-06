@@ -1,129 +1,202 @@
-import { authUtils } from "@/lib/auth/utils";
-import { RequestOptions, RequestMethod, ApiErrorResponse } from "./types";
-import toast from "react-hot-toast";
-import { getLocale } from "next-intl/server";
+// Configuration du client API
 
-// Helper to determine if we are on the server
-const isServer = typeof window === "undefined";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
-/**
- * Wrapper générique pour fetch avec gestion automatique de l'auth, des locales et du feedback UI.
- */
-export async function apiRequest<T>(
-  endpoint: string,
-  method: RequestMethod = "GET",
-  body?: any,
-  options: RequestOptions = {}
-): Promise<T | null> {
-  const {
-    loadingMessage,
-    successMessage,
-    hideError = false,
-    params,
-    headers = {},
-    ...customConfig
-  } = options;
+export class ApiError extends Error {
+  status: number;
+  body: any;
 
-  let toastId: string | undefined;
+  constructor(status: number, body: any, message?: string) {
+    super(message || (body && body.message) || `API Error: ${status}`);
+    this.name = 'ApiError';
+    this.status = status;
+    this.body = body;
+  }
+}
 
-  // 1. Afficher le loader (Client-side seulement pour toast)
-  if (loadingMessage && !isServer) {
-    toastId = toast.loading(loadingMessage);
+interface RequestOptions extends RequestInit {
+  params?: Record<string, string | number | boolean | undefined>;
+}
+
+class ApiClient {
+  private baseUrl: string;
+  private token: string | null = null;
+
+  constructor(baseUrl: string) {
+    this.baseUrl = baseUrl;
   }
 
-  try {
-    // 2. Préparer les headers
-    const requestHeaders: HeadersInit = {
-      "Content-Type": "application/json",
-      ...headers,
-    };
+  setToken(token: string | null) {
+    this.token = token;
+  }
 
-    // Injecter le token d'auth
-    const token = await authUtils.getAccessToken();
-    if (token) {
-      (requestHeaders as any)["Authorization"] = `Bearer ${token}`;
+  private getHeaders(): HeadersInit {
+    const headers: HeadersInit = {};
+
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
     }
 
-    // Injecter la locale
-    let locale = "fr";
-    if (isServer) {
-      // Sur le serveur, on récupère via next-intl
-      try {
-        locale = await getLocale();
-      } catch (e) {
-        console.warn("Could not get locale on server", e);
-      }
-    } else {
-      // Sur le client, on peut lire le cookie ou utiliser 'fr' par défaut
-      const match = document.cookie.match(new RegExp("(^| )NEXT_LOCALE=([^;]+)"));
-      if (match) locale = match[2];
-    }
-    (requestHeaders as any)["Accept-Language"] = locale;
+    return headers;
+  }
 
-    // 3. Construire l'URL avec les params
-    let url = endpoint;
-    if (endpoint.startsWith("/")) {
-       // TODO: Remplacer par votre URL de base d'API via une variable d'environnement
-       const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
-       url = `${API_BASE_URL}${endpoint}`;
-    }
-
+  private buildUrl(endpoint: string, params?: Record<string, string | number | boolean | undefined>): string {
+    // Build the full URL
+    let fullUrl = `${this.baseUrl}${endpoint}`;
+    
+    // Add query parameters
     if (params) {
       const searchParams = new URLSearchParams();
       Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined) {
+        if (value !== undefined && value !== '') {
           searchParams.append(key, String(value));
         }
       });
       const queryString = searchParams.toString();
       if (queryString) {
-        url += (url.includes("?") ? "&" : "?") + queryString;
+        fullUrl += `?${queryString}`;
       }
     }
 
-    // 4. Exécuter la requête
-    const response = await fetch(url, {
-      method,
-      headers: requestHeaders,
-      body: body ? JSON.stringify(body) : undefined,
-      ...customConfig,
-    });
+    return fullUrl;
+  }
 
-    // 5. Gérer les erreurs HTTP
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({})) as Partial<ApiErrorResponse>;
-      const errorMessage = errorData.message || `Erreur ${response.status}: ${response.statusText}`;
-      throw new Error(errorMessage);
+  private async handleResponse(response: Response) {
+    const text = await response.text();
+    let data: any = null;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch (e) {
+      data = text;
     }
 
-    const data = await response.json().catch(() => null) as T;
-
-    // 6. Succès
-    if (successMessage && !isServer && toastId) {
-      toast.success(successMessage, { id: toastId });
-    } else if (successMessage && !isServer) {
-       toast.success(successMessage);
-    } else if (toastId && !isServer) {
-       toast.dismiss(toastId);
+    if (!response.ok) {
+      // If the token is invalid or expired, clear local tokens and redirect to login (client-side only)
+      if (response.status === 401) {
+        try {
+          this.token = null;
+        } catch (e) {
+          // ignore
+        }
+        try {
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            // Redirect user to login to re-authenticate
+            window.location.replace('/login');
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+      throw new ApiError(response.status, data, response.statusText);
     }
 
     return data;
+  }
 
-  } catch (error: any) {
-    // 7. Gestion des erreurs
-    const message = error.message || "Une erreur inconnue est survenue.";
+  async get<T>(endpoint: string, options?: RequestOptions): Promise<T> {
+    const url = this.buildUrl(endpoint, options?.params);
     
-    if (toastId && !isServer) {
-      toast.error(message, { id: toastId });
-    } else if (!hideError && !isServer) {
-      toast.error(message);
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: this.getHeaders(),
+      ...options,
+    });
+
+    return this.handleResponse(response);
+  }
+
+  async post<T>(endpoint: string, data?: unknown, options?: RequestOptions): Promise<T> {
+    const url = this.buildUrl(endpoint, options?.params);
+    const headers = { ...this.getHeaders(), 'Content-Type': 'application/json' } as HeadersInit;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: data ? JSON.stringify(data) : undefined,
+      ...options,
+    });
+
+    return this.handleResponse(response);
+  }
+
+  async put<T>(endpoint: string, data?: unknown, options?: RequestOptions): Promise<T> {
+    const url = this.buildUrl(endpoint, options?.params);
+    const headers = { ...this.getHeaders(), 'Content-Type': 'application/json' } as HeadersInit;
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers,
+      body: data ? JSON.stringify(data) : undefined,
+      ...options,
+    });
+
+    return this.handleResponse(response);
+  }
+
+  async patch<T>(endpoint: string, data?: unknown, options?: RequestOptions): Promise<T> {
+    const url = this.buildUrl(endpoint, options?.params);
+    const headers = { ...this.getHeaders(), 'Content-Type': 'application/json' } as HeadersInit;
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers,
+      body: data ? JSON.stringify(data) : undefined,
+      ...options,
+    });
+
+    return this.handleResponse(response);
+  }
+
+  async delete<T>(endpoint: string, options?: RequestOptions): Promise<T> {
+    const url = this.buildUrl(endpoint, options?.params);
+    
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: this.getHeaders(),
+      ...options,
+    });
+
+    return this.handleResponse(response);
+  }
+
+  // Upload de fichiers
+  async upload<T>(endpoint: string, file: File, fieldName: string = 'file', fields?: Record<string, string | Blob>, method: 'POST' | 'PUT' | 'PATCH' = 'POST'): Promise<T> {
+    const formData = new FormData();
+    formData.append(fieldName, file);
+
+    if (fields) {
+      Object.entries(fields).forEach(([key, value]) => {
+        formData.append(key, value as any);
+      });
+    }
+    const headers: HeadersInit = {
+      'Accept': 'application/json',
+    };
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+    const url = this.buildUrl(endpoint);
+
+    const response = await fetch(url, {
+      method,
+      headers,
+      body: formData,
+    });
+
+    const text = await response.text();
+    let data: any = null;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch (e) {
+      data = text;
     }
 
-    // Sur le serveur, on log juste l'erreur
-    if (isServer) {
-      console.error(`API Error [${method} ${endpoint}]:`, message);
+    if (!response.ok) {
+      throw new ApiError(response.status, data, response.statusText);
     }
 
-    throw error; // Propager l'erreur pour que le caller puisse réagir si besoin
+    return data;
   }
 }
+
+export const apiClient = new ApiClient(API_BASE_URL);
+export default apiClient;
