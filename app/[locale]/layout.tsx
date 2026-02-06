@@ -13,6 +13,9 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: "SimIntBot Admin",
   description: "Administration panel",
+  icons: {
+    icon: "/icon.png",
+  },
 };
 
 export default async function RootLayout({

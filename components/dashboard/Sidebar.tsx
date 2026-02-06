@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useMobileSidebar } from './MobileSidebarContext';
 import apiClient from '@/lib/api/client';
+import { userService, User } from '@/lib/services/user.service';
 
 // Composant pour le contenu de la sidebar
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
@@ -14,13 +15,31 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const router = useRouter();
   const [isInterviewOpen, setIsInterviewOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const fetchMe = async () => {
+      try {
+        const res = await userService.getCurrentUser();
+        if (res.data) {
+          setCurrentUser(res.data);
+        }
+      } catch (err) {
+        console.error("Failed to load admin profile", err);
+      }
+    };
+    fetchMe();
+  }, []);
 
   // Ouvrir automatiquement les dropdowns si on est sur une page concernée
   useEffect(() => {
     if (pathname.includes('/interview')) {
       setIsInterviewOpen(true);
+      // Ensure specific interview settings don't trigger main settings
     }
-    if (pathname.includes('/settings')) {
+    
+    // Only open Settings dropdown if we are in main settings, not interview settings
+    if (pathname.includes('/settings') && !pathname.includes('/interview/settings')) {
       setIsSettingsOpen(true);
     }
   }, [pathname]);
@@ -98,15 +117,21 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       <div className="px-4 py-2">
         <div className="flex items-center gap-3 p-3 bg-white/10 rounded-xl mb-4">
           <div className="flex-shrink-0">
-            <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center text-[#0D7BFF] font-bold text-base shadow-md">
-              A
+            <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center text-[#0D7BFF] font-bold text-base shadow-md overflow-hidden">
+                {currentUser?.profile_picture_url && currentUser.profile_picture_url !== "string" ? (
+                    <img src={currentUser.profile_picture_url} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                    <span>
+                      {currentUser ? (currentUser.first_name?.[0] || '') + (currentUser.last_name?.[0] || '') || 'A' : 'A'}
+                    </span>
+                )}
             </div>
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-sm text-white truncate">
-              Administrateur
+              {currentUser ? `${currentUser.first_name} ${currentUser.last_name}` : 'Administrateur'}
             </p>
-            <p className="text-xs text-white/70">Super Admin</p>
+            <p className="text-xs text-white/70">{currentUser?.email || 'Super Admin'}</p>
           </div>
           <ChevronDown size={16} className="text-white/50 flex-shrink-0" />
         </div>

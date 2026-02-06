@@ -7,7 +7,7 @@ import {
   Calendar, Briefcase, GraduationCap, Award, Video, Clock,
   CheckCircle, XCircle, ChevronLeft, ChevronRight, Plus, TrendingUp, X, Loader2
 } from 'lucide-react';
-import { userService, User as ServiceUser } from '@/lib/services/user.service';
+import { userService, User as ServiceUser, CVProfile, InterviewSession, InterviewSessionDetail, AgendaEvent } from '@/lib/services/user.service';
 
 // Types
 interface Interview {
@@ -86,27 +86,56 @@ export default function UserDetailsPage() {
   const userId = params.id as string;
   const [activeTab, setActiveTab] = useState<TabType>('info');
   const [user, setUser] = useState<User | null>(null);
+  const [cvData, setCvData] = useState<CVProfile | null>(null);
+  const [interviewsData, setInterviewsData] = useState<{items: InterviewSession[], total: number} | null>(null);
+  const [calendarEvents, setCalendarEvents] = useState<AgendaEvent[]>([]);
+  
   const [loading, setLoading] = useState(true);
+  const [loadingCV, setLoadingCV] = useState(false);
+  const [loadingInterviews, setLoadingInterviews] = useState(false);
+  const [loadingCalendar, setLoadingCalendar] = useState(false);
+  const [loadingDetail, setLoadingDetail] = useState(false);
   
   // État du calendrier
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
+  const [selectedInterview, setSelectedInterview] = useState<InterviewSessionDetail | any | null>(null);
 
+  // Fetch User & Stats
   useEffect(() => {
     const fetchUser = async () => {
         try {
             setLoading(true);
             const response = await userService.getUserById(userId);
             const userData = response.data || response;
-            // @ts-ignore - Merging with mock data for UI display
-            setUser({
-                ...userData,
-                cv: mockCV,
-                interviews: mockInterviews
-            }); 
+            
+            // Fetch stats separately to ensure accuracy if API user object doesn't have them updated
+            try {
+                const statsResponse = await userService.getUserInterviews(userId, { size: 100 }); // Fetch up to 100 for stats
+                // @ts-ignore
+                const interviews = statsResponse.data?.items || statsResponse.data || statsResponse.items || [];
+                // @ts-ignore
+                const total = statsResponse.data?.total || interviews.length;
+                
+                // Calculate average score
+                const scoredInterviews = interviews.filter((i: any) => i.status === 'completed' && typeof i.score === 'number'); 
+                
+                const avgScore = scoredInterviews.length > 0 
+                    ? Math.round(scoredInterviews.reduce((acc: number, curr: any) => acc + (curr.score || 0), 0) / scoredInterviews.length)
+                    : (userData.average_score || 0);
+
+                setUser({
+                    ...userData,
+                    interview_count: total,
+                    average_score: avgScore
+                });
+            } catch (statsErr) {
+                 console.error("Error fetching stats fallback", statsErr);
+                 setUser(userData); 
+            }
+
         } catch (error) {
             console.error(error);
         } finally {
@@ -118,17 +147,95 @@ export default function UserDetailsPage() {
     }
   }, [userId]);
 
-  // Créer un map des entretiens par date (using mock for now)
-  const interviewsByDate = useMemo(() => {
-    const map: Record<string, Interview[]> = {};
-    mockInterviews.forEach(interview => {
-      if (!map[interview.date]) {
-        map[interview.date] = [];
+  useEffect(() => {
+    const fetchCV = async () => {
+        if (activeTab === 'cv' && !cvData && userId) {
+            try {
+                setLoadingCV(true);
+                const response = await userService.getUserCV(userId);
+                // @ts-ignore
+                setCvData(response.data || response);
+            } catch (error) {
+                console.error("Error fetching CV", error);
+            } finally {
+                setLoadingCV(false);
+            }
+        }
+    }
+    fetchCV();
+  }, [activeTab, userId, cvData]);
+
+  // Fetch Interviews
+  useEffect(() => {
+    const fetchInterviews = async () => {
+        if (activeTab === 'history' && !interviewsData && userId) {
+            try {
+                setLoadingInterviews(true);
+                const response = await userService.getUserInterviews(userId, { page: 1, size: 20 });
+                 // @ts-ignore
+                const data = response.data || response;
+                setInterviewsData(data);
+            } catch (error) {
+                console.error("Error fetching interviews", error);
+            } finally {
+                setLoadingInterviews(false);
+            }
+        }
+    }
+    fetchInterviews();
+  }, [activeTab, userId, interviewsData]);
+
+  // Fetch Calendar Events
+  useEffect(() => {
+    const fetchAgenda = async () => {
+        if (activeTab === 'planifications' && userId) {
+            try {
+                setLoadingCalendar(true);
+                // Calculate start/end based on current month view, or fetch a broader range
+                const startDate = new Date(currentYear, currentMonth, 1).toISOString();
+                const endDate = new Date(currentYear, currentMonth + 1, 0).toISOString();
+                
+                const response = await userService.getUserAgendaEvents(userId, startDate, endDate);
+                 // @ts-ignore
+                const data = response.data || response;
+                // @ts-ignore
+                setCalendarEvents(Array.isArray(data) ? data : []);
+            } catch (error) {
+                console.error("Error fetching agenda", error);
+            } finally {
+                setLoadingCalendar(false);
+            }
+        }
+    }
+    fetchAgenda();
+  }, [activeTab, userId, currentYear, currentMonth]);
+
+  // Click on interview to fetch details
+  const handleInterviewClick = async (sessionId: string) => {
+      try {
+          setLoadingDetail(true);
+          const response = await userService.getInterviewSession(sessionId);
+           // @ts-ignore
+          setSelectedInterview(response.data || response);
+      } catch (e) {
+          console.error("Error fetching session detail", e);
+      } finally {
+          setLoadingDetail(false);
       }
-      map[interview.date].push(interview);
+  }
+
+  // Créer un map des events par date (replacing mockInterviews usage)
+  const eventsByDate = useMemo(() => {
+    const map: Record<string, AgendaEvent[]> = {};
+    calendarEvents.forEach(event => {
+      const dateKey = event.start_time.split('T')[0];
+      if (!map[dateKey]) {
+        map[dateKey] = [];
+      }
+      map[dateKey].push(event);
     });
     return map;
-  }, []);
+  }, [calendarEvents]);
 
   // Navigation du calendrier
   const goToPreviousMonth = () => {
@@ -194,14 +301,10 @@ export default function UserDetailsPage() {
   };
 
   // Gérer le clic sur un jour
-  const handleDayClick = (dateKey: string, interviews: Interview[]) => {
+  const handleDayClick = (dateKey: string, events: AgendaEvent[]) => {
     setSelectedDate(dateKey);
-    if (interviews.length === 1) {
-      setSelectedInterview(interviews[0]);
-    } else if (interviews.length > 1) {
-      // Si plusieurs entretiens, on affiche le premier par défaut
-      setSelectedInterview(interviews[0]);
-    }
+    // Note: detailed view logic for AgendaEvent is simpler or distinct from InterviewSessionDetail
+    // For now we just select date to show sidebar list or similar
   };
 
   // Fermer le modal
@@ -365,11 +468,41 @@ export default function UserDetailsPage() {
 
           {/* Tab: CV */}
           {activeTab === 'cv' && (
+            loadingCV ? (
+                <div className="flex justify-center p-10">
+                     <Loader2 className="w-8 h-8 animate-spin text-[#0D7BFF]" />
+                </div>
+            ) : !cvData ? (
+                 <div className="text-center p-10 text-gray-500">
+                    Aucune donnée de CV disponible.
+                 </div>
+            ) : (
             <div className="space-y-8">
               {/* En-tête CV */}
-              <div className="border-b border-gray-100 pb-6">
-                <h3 className="text-xl font-bold text-gray-900">{user.cv.title}</h3>
-                <p className="text-gray-600 mt-2">{user.cv.summary}</p>
+              <div className="border-b border-gray-100 pb-6 flex justify-between items-start">
+                <div>
+                    <h3 className="text-xl font-bold text-gray-900">{cvData.headline}</h3>
+                    <p className="text-gray-600 mt-2">{cvData.summary}</p>
+                    <div className="flex gap-4 mt-3 text-sm text-gray-500">
+                        <span className="flex items-center gap-1">
+                             <Briefcase size={14} /> {cvData.years_of_experience} ans d'expérience
+                        </span>
+                        <span className="flex items-center gap-1">
+                             <Award size={14} /> {cvData.primary_domain}
+                        </span>
+                    </div>
+                </div>
+                {cvData.resume_file_url && (
+                    <a 
+                        href={`${process.env.NEXT_PUBLIC_IMAGE_URL}${cvData.resume_file_url}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-2 bg-[#0D7BFF] text-white rounded-lg text-sm font-medium hover:bg-[#0b66d6] transition-colors"
+                    >
+                        <FileText size={16} />
+                        Voir le CV original
+                    </a>
+                )}
               </div>
 
               {/* Expériences */}
@@ -378,16 +511,66 @@ export default function UserDetailsPage() {
                   <Briefcase size={18} />
                   Expériences professionnelles
                 </h4>
-                <div className="space-y-4">
-                  {user.cv.experiences.map((exp) => (
-                    <div key={exp.id} className="border-l-2 border-[#0D7BFF]/30 pl-4">
-                      <p className="font-medium text-gray-900">{exp.title}</p>
-                      <p className="text-sm text-[#0D7BFF]">{exp.company} • {exp.period}</p>
-                      <p className="text-sm text-gray-600 mt-1">{exp.description}</p>
+                <div className="space-y-6">
+                  {cvData.experiences.map((exp, index) => (
+                    <div key={index} className="border-l-2 border-[#0D7BFF]/30 pl-4 pb-2">
+                      <p className="font-medium text-gray-900 text-lg">{exp.role}</p>
+                      <p className="text-sm text-[#0D7BFF] font-medium mb-2">{exp.company} • {exp.start_date} - {exp.end_date}</p>
+                      
+                      {exp.description && (
+                          <p className="text-sm text-gray-600 mb-3 whitespace-pre-wrap">{exp.description}</p>
+                      )}
+
+                      {exp.tech_stack && exp.tech_stack.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                              {exp.tech_stack.map(tech => (
+                                  <span key={tech} className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-md">
+                                      {tech}
+                                  </span>
+                              ))}
+                          </div>
+                      )}
                     </div>
                   ))}
                 </div>
               </div>
+
+              {/* Projets */}
+              {cvData.projects && cvData.projects.length > 0 && (
+                  <div>
+                    <h4 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4">
+                      <Briefcase size={18} />
+                      Projets
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {cvData.projects.map((project, idx) => (
+                            <div key={idx} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                                <div className="flex justify-between items-start">
+                                    <h5 className="font-semibold text-gray-900">{project.title}</h5>
+                                    {project.link && (
+                                        <a href={project.link} target="_blank" rel="noreferrer" className="text-[#0D7BFF] hover:underline text-xs">
+                                            Voir
+                                        </a>
+                                    )}
+                                </div>
+                                <p className="text-sm text-gray-600 mt-2 mb-3 line-clamp-3">{project.description}</p>
+                                {project.technologies && (
+                                    <div className="flex flex-wrap gap-1">
+                                        {project.technologies.slice(0, 3).map(t => (
+                                            <span key={t} className="text-[10px] bg-white border border-gray-200 px-2 py-0.5 rounded text-gray-500">
+                                                {t}
+                                            </span>
+                                        ))}
+                                        {project.technologies.length > 3 && (
+                                            <span className="text-[10px] text-gray-400 self-center">+{project.technologies.length - 3}</span>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                  </div>
+              )}
 
               {/* Formation */}
               <div>
@@ -395,40 +578,86 @@ export default function UserDetailsPage() {
                   <GraduationCap size={18} />
                   Formation
                 </h4>
-                <div className="space-y-3">
-                  {user.cv.education.map((edu) => (
-                    <div key={edu.id} className="flex items-start gap-3">
-                      <Award size={16} className="text-gray-400 mt-0.5" />
+                <div className="space-y-4">
+                  {cvData.education.map((edu, index) => (
+                    <div key={index} className="flex items-start gap-3">
+                      <div className="mt-1 bg-gray-100 p-2 rounded-lg">
+                          <Award size={16} className="text-gray-500" />
+                      </div>
                       <div>
                         <p className="font-medium text-gray-900">{edu.degree}</p>
-                        <p className="text-sm text-gray-600">{edu.school} • {edu.year}</p>
+                        <p className="text-sm text-gray-600">{edu.school}</p>
+                        <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                             <span>{edu.year}</span>
+                             <span>•</span>
+                             <span>{edu.field}</span>
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Compétences */}
-              <div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-4">Compétences</h4>
-                <div className="flex flex-wrap gap-2">
-                  {user.cv.skills.map((skill) => (
-                    <span key={skill} className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm">
-                      {skill}
-                    </span>
-                  ))}
-                </div>
+              {/* Compétences & Langues */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4">Hard Skills</h4>
+                    <div className="flex flex-wrap gap-2">
+                        {cvData.skills.hard_skills.map((skill) => (
+                            <span key={skill} className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm border border-gray-200">
+                            {skill}
+                            </span>
+                        ))}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4">Soft Skills</h4>
+                    <div className="flex flex-wrap gap-2">
+                        {cvData.skills.soft_skills.map((skill) => (
+                            <span key={skill} className="px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-sm border border-green-100">
+                            {skill}
+                            </span>
+                        ))}
+                    </div>
+                  </div>
               </div>
+
+              {/* Langues */}
+              {cvData.languages && cvData.languages.length > 0 && (
+                  <div>
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4">Langues</h4>
+                      <div className="flex gap-4">
+                          {cvData.languages.map((lang, idx) => (
+                              <div key={idx} className="flex flex-col items-center bg-gray-50 p-3 rounded-xl min-w-[100px]">
+                                   <span className="font-medium text-gray-900">{lang.lang}</span>
+                                   <span className="text-xs text-gray-500">{lang.level}</span>
+                              </div>
+                          ))}
+                      </div>
+                  </div>
+              )}
             </div>
+            )
           )}
 
           {/* Tab: Historique entretiens */}
           {activeTab === 'history' && (
+             loadingInterviews ? (
+                <div className="flex justify-center p-10">
+                     <Loader2 className="w-8 h-8 animate-spin text-[#0D7BFF]" />
+                </div>
+            ) : !interviewsData || interviewsData.items.length === 0 ? (
+                 <div className="text-center p-10 text-gray-500">
+                    Aucun historique d'entretien trouvé.
+                 </div>
+            ) : (
             <div className="space-y-4">
-              {user.interviews.map((interview) => (
+              {interviewsData.items.map((interview) => (
                 <div 
                   key={interview.id} 
-                  className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                  onClick={() => handleInterviewClick(interview.id)}
+                  className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
                 >
                   <div className="flex items-center gap-4">
                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
@@ -437,17 +666,17 @@ export default function UserDetailsPage() {
                       <Video size={20} className={interview.status === 'completed' ? 'text-[#0D7BFF]' : 'text-orange-600'} />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">{interview.job}</p>
+                      <p className="font-medium text-gray-900">Entretien {new Date(interview.created_at).toLocaleDateString()}</p>
                       <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <span>{interview.date}</span>
+                        <span>{interview.recruiter_name}</span>
                         <span>•</span>
-                        <span>{interview.type}</span>
-                        {interview.duration !== '-' && (
+                        <span className="capitalize">{interview.flow_type}</span>
+                        {interview.duration_minutes > 0 && (
                           <>
                             <span>•</span>
                             <span className="flex items-center gap-1">
                               <Clock size={12} />
-                              {interview.duration}
+                              {interview.duration_minutes} min
                             </span>
                           </>
                         )}
@@ -455,19 +684,13 @@ export default function UserDetailsPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    {interview.score !== null ? (
-                      <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        interview.score >= 80 ? 'bg-green-100 text-green-700' :
-                        interview.score >= 60 ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-red-100 text-red-700'
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        interview.status === 'completed' ? 'bg-green-100 text-green-700' :
+                        interview.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+                        'bg-gray-100 text-gray-700'
                       }`}>
-                        {interview.score}%
-                      </div>
-                    ) : interview.status === 'scheduled' ? (
-                      <span className="text-sm text-orange-600 font-medium">Planifié</span>
-                    ) : (
-                      <span className="text-sm text-gray-400">-</span>
-                    )}
+                        {interview.status === 'completed' ? 'Terminé' : interview.status === 'in_progress' ? 'En cours' : interview.status}
+                    </span>
                     {interview.status === 'completed' ? (
                       <CheckCircle size={18} className="text-green-500" />
                     ) : (
@@ -477,10 +700,16 @@ export default function UserDetailsPage() {
                 </div>
               ))}
             </div>
+            )
           )}
 
           {/* Tab: Planifications */}
           {activeTab === 'planifications' && (
+            loadingCalendar ? (
+                 <div className="flex justify-center p-10">
+                     <Loader2 className="w-8 h-8 animate-spin text-[#0D7BFF]" />
+                </div>
+            ) : (
             <div className="space-y-8">
               {/* Layout principal - Calendrier + Sidebar */}
               <div className="flex flex-col xl:flex-row gap-6">
@@ -517,7 +746,7 @@ export default function UserDetailsPage() {
                     <div className="flex items-center gap-4">
                       <span className="flex items-center gap-2 text-xs text-gray-500">
                         <span className="w-3 h-3 rounded-full bg-[#0D7BFF]"></span>
-                        Terminé
+                        Complété
                       </span>
                       <span className="flex items-center gap-2 text-xs text-gray-500">
                         <span className="w-3 h-3 rounded-full bg-amber-500"></span>
@@ -540,16 +769,16 @@ export default function UserDetailsPage() {
                     {/* Grille des jours */}
                     <div className="grid grid-cols-7">
                       {calendarDays.map((dayInfo, i) => {
-                        const dayInterviews = interviewsByDate[dayInfo.dateKey] || [];
-                        const hasScheduled = dayInterviews.some(int => int.status === 'scheduled');
-                        const hasCompleted = dayInterviews.some(int => int.status === 'completed');
-                        const hasEvent = dayInterviews.length > 0;
+                        const dayEvents = eventsByDate[dayInfo.dateKey] || [];
+                        const hasScheduled = dayEvents.some(evt => evt.status === 'scheduled');
+                        const hasCompleted = dayEvents.some(evt => evt.status === 'completed');
+                        const hasEvent = dayEvents.length > 0;
                         const isTodayDate = isToday(dayInfo.dateKey);
                         
                         return (
                           <div 
                             key={i} 
-                            onClick={() => hasEvent && handleDayClick(dayInfo.dateKey, dayInterviews)}
+                            onClick={() => hasEvent && handleDayClick(dayInfo.dateKey, dayEvents)}
                             className={`relative min-h-[100px] p-2 border-b border-r border-gray-100 transition-all duration-200 group ${
                               !dayInfo.isCurrentMonth ? 'bg-gray-50/50' : 'bg-white hover:bg-[#0D7BFF]/5'
                             } ${isTodayDate ? 'bg-[#0D7BFF]/10' : ''} ${hasEvent ? 'cursor-pointer' : ''}`}
@@ -568,25 +797,25 @@ export default function UserDetailsPage() {
                             </div>
                             
                             {/* Événements */}
-                            {dayInfo.isCurrentMonth && dayInterviews.map((interview, idx) => (
+                            {dayInfo.isCurrentMonth && dayEvents.map((event, idx) => (
                               <div 
-                                key={interview.id}
+                                key={event.id}
                                 className={`mt-1 p-1.5 rounded-lg cursor-pointer hover:scale-[1.02] transition-all ${
-                                  interview.status === 'scheduled' 
+                                  event.status === 'scheduled' 
                                     ? 'bg-amber-100/80 border border-amber-200/60 hover:bg-amber-100' 
                                     : 'bg-[#0D7BFF]/10 border border-[#0D7BFF]/20 hover:bg-[#0D7BFF]/20'
                                 }`}
                               >
                                 <p className={`text-[10px] font-semibold truncate ${
-                                  interview.status === 'scheduled' ? 'text-amber-700' : 'text-[#0D7BFF]'
+                                  event.status === 'scheduled' ? 'text-amber-700' : 'text-[#0D7BFF]'
                                 }`}>
-                                  {interview.job}
+                                  {event.title || 'Entretien'}
                                 </p>
                                 <p className={`text-[9px] flex items-center gap-1 ${
-                                  interview.status === 'scheduled' ? 'text-amber-600/70' : 'text-[#0D7BFF]/70'
+                                  event.status === 'scheduled' ? 'text-amber-600/70' : 'text-[#0D7BFF]/70'
                                 }`}>
                                   <Clock size={8} />
-                                  {interview.time || '10:00'}
+                                  {new Date(event.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                 </p>
                               </div>
                             ))}
@@ -608,26 +837,29 @@ export default function UserDetailsPage() {
 
                 {/* Sidebar - Événements */}
                 <div className="xl:w-80 space-y-6">
-                  {/* Prochains entretiens */}
+                  {/* Prochains entretiens / Events du jour sélectionné */}
                   <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-5 border border-orange-100">
                     <div className="flex items-center justify-between mb-4">
                       <h4 className="font-bold text-gray-900 flex items-center gap-2">
                         <div className="w-8 h-8 bg-gradient-to-r from-orange-400 to-orange-500 rounded-lg flex items-center justify-center">
                           <Clock size={16} className="text-white" />
                         </div>
-                        À venir
+                        {selectedDate ? `Le ${new Date(selectedDate).toLocaleDateString()}` : 'À venir ce mois'}
                       </h4>
                       <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-medium">
-                        {user.interviews.filter(i => i.status === 'scheduled').length} planifié(s)
+                         {selectedDate 
+                            ? (eventsByDate[selectedDate]?.length || 0) 
+                            : calendarEvents.filter(e => e.status === 'scheduled').length
+                         } event(s)
                       </span>
                     </div>
                     
-                    <div className="space-y-3">
-                      {user.interviews.filter(i => i.status === 'scheduled').length > 0 ? (
-                        user.interviews.filter(i => i.status === 'scheduled').map((interview) => (
+                    <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                      {(selectedDate ? (eventsByDate[selectedDate] || []) : calendarEvents.filter(e => e.status === 'scheduled')).length > 0 ? (
+                        (selectedDate ? (eventsByDate[selectedDate] || []) : calendarEvents.filter(e => e.status === 'scheduled')).map((event) => (
                           <div 
-                            key={interview.id} 
-                            onClick={() => setSelectedInterview(interview)}
+                            key={event.id} 
+                            // onClick={() => setSelectedInterview(event)} // Could fetch session if we want
                             className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer border border-orange-100/50 hover:border-orange-200"
                           >
                             <div className="flex items-start gap-3">
@@ -635,12 +867,12 @@ export default function UserDetailsPage() {
                                 <Video size={20} className="text-orange-600" />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="font-semibold text-gray-900 truncate">{interview.job}</p>
-                                <p className="text-sm text-gray-500 mt-0.5">{interview.type}</p>
+                                <p className="font-semibold text-gray-900 truncate">{event.title || 'Entretien'}</p>
+                                <p className="text-sm text-gray-500 mt-0.5">{event.description}</p>
                                 <div className="flex items-center gap-2 mt-2">
                                   <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-md font-medium flex items-center gap-1">
                                     <Calendar size={10} />
-                                    {interview.date} - {interview.time}
+                                    {new Date(event.start_time).toLocaleDateString()} - {new Date(event.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                   </span>
                                 </div>
                               </div>
@@ -652,110 +884,33 @@ export default function UserDetailsPage() {
                           <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
                             <Calendar size={20} className="text-orange-400" />
                           </div>
-                          <p className="text-sm text-gray-500">Aucun entretien planifié</p>
+                          <p className="text-sm text-gray-500">Aucun événement</p>
                         </div>
                       )}
-                    </div>
-                  </div>
-
-                  {/* Statistiques rapides */}
-                  <div className="bg-gradient-to-br from-[#0D7BFF]/10 to-[#0D7BFF]/5 rounded-2xl p-5 border border-[#0D7BFF]/20">
-                    <h4 className="font-bold text-gray-900 flex items-center gap-2 mb-4">
-                      <div className="w-8 h-8 bg-gradient-to-r from-[#0D7BFF] to-[#0a6ae0] rounded-lg flex items-center justify-center">
-                        <TrendingUp size={16} className="text-white" />
-                      </div>
-                      Statistiques
-                    </h4>
-                    
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-white rounded-xl p-4 text-center shadow-sm">
-                        <p className="text-3xl font-bold bg-gradient-to-r from-[#0D7BFF] to-[#0a6ae0] bg-clip-text text-transparent">
-                          {user.interviews.length}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">Total entretiens</p>
-                      </div>
-                      <div className="bg-white rounded-xl p-4 text-center shadow-sm">
-                        <p className="text-3xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
-                          {user.interviews.filter(i => i.status === 'completed').length}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">Complétés</p>
-                      </div>
-                      <div className="bg-white rounded-xl p-4 text-center shadow-sm col-span-2">
-                        <p className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent">
-                          {Math.round(user.interviews.filter(i => i.score).reduce((acc, i) => acc + (i.score || 0), 0) / (user.interviews.filter(i => i.score).length || 1))}%
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">Score moyen</p>
-                        <div className="mt-2 h-2 bg-gray-100 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-gradient-to-r from-purple-500 to-purple-600 rounded-full transition-all duration-1000"
-                            style={{ width: `${Math.round(user.interviews.filter(i => i.score).reduce((acc, i) => acc + (i.score || 0), 0) / (user.interviews.filter(i => i.score).length || 1))}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Derniers entretiens */}
-                  <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-                    <h4 className="font-bold text-gray-900 flex items-center gap-2 mb-4">
-                      <div className="w-8 h-8 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg flex items-center justify-center">
-                        <History size={16} className="text-white" />
-                      </div>
-                      Récemment
-                    </h4>
-                    
-                    <div className="space-y-3">
-                      {user.interviews.filter(i => i.status === 'completed').slice(0, 3).map((interview) => (
-                        <div 
-                          key={interview.id} 
-                          onClick={() => setSelectedInterview(interview)}
-                          className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
-                        >
-                          <div className="relative">
-                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                              interview.score && interview.score >= 80 ? 'bg-green-100' :
-                              interview.score && interview.score >= 60 ? 'bg-yellow-100' :
-                              'bg-[#0D7BFF]/10'
-                            }`}>
-                              <Video size={16} className={
-                                interview.score && interview.score >= 80 ? 'text-green-600' :
-                                interview.score && interview.score >= 60 ? 'text-yellow-600' :
-                                'text-[#0D7BFF]'
-                              } />
-                            </div>
-                            {interview.score && (
-                              <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full text-[9px] font-bold flex items-center justify-center text-white ${
-                                interview.score >= 80 ? 'bg-green-500' :
-                                interview.score >= 60 ? 'bg-yellow-500' :
-                                'bg-red-500'
-                              }`}>
-                                {interview.score}
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-gray-900 text-sm truncate">{interview.job}</p>
-                            <p className="text-xs text-gray-400">{interview.date}</p>
-                          </div>
-                          <ChevronRight size={14} className="text-gray-300" />
-                        </div>
-                      ))}
                     </div>
                   </div>
                 </div>
               </div>
             </div>
+            )
           )}
         </div>
       </div>
 
       {/* Modal détails entretien */}
-      {selectedInterview && (
+      {loadingDetail && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+             <Loader2 className="w-10 h-10 animate-spin text-white" />
+          </div>
+      )}
+
+      {selectedInterview && !loadingDetail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             {/* Header du modal */}
             <div className={`p-6 ${
-              selectedInterview.status === 'scheduled' 
+              // @ts-ignore
+              selectedInterview.status === 'scheduled' || selectedInterview.status === 'in_progress'
                 ? 'bg-gradient-to-r from-amber-500 to-orange-500' 
                 : 'bg-gradient-to-r from-[#0D7BFF] to-[#0a6ae0]'
             }`}>
@@ -765,8 +920,14 @@ export default function UserDetailsPage() {
                     <Video size={28} className="text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-white">{selectedInterview.job}</h3>
-                    <p className="text-white/80 text-sm mt-1">{selectedInterview.type}</p>
+                    <h3 className="text-xl font-bold text-white">
+                        {/* @ts-ignore */}
+                        {selectedInterview.job_position?.title || selectedInterview.job || 'Entretien'}
+                    </h3>
+                    <p className="text-white/80 text-sm mt-1">
+                        {/* @ts-ignore */}
+                        {selectedInterview.recruiter_name ? `Avec ${selectedInterview.recruiter_name}` : selectedInterview.type}
+                    </p>
                   </div>
                 </div>
                 <button 
@@ -787,21 +948,30 @@ export default function UserDetailsPage() {
                     <Calendar size={14} />
                     Date
                   </div>
-                  <p className="font-semibold text-gray-900">{selectedInterview.date}</p>
+                  <p className="font-semibold text-gray-900">
+                    {/* @ts-ignore */}
+                    {new Date(selectedInterview.started_at || selectedInterview.date).toLocaleDateString()}
+                  </p>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-4">
                   <div className="flex items-center gap-2 text-gray-500 text-sm mb-1">
                     <Clock size={14} />
                     Heure
                   </div>
-                  <p className="font-semibold text-gray-900">{selectedInterview.time || '-'}</p>
+                  <p className="font-semibold text-gray-900">
+                    {/* @ts-ignore */}
+                    {selectedInterview.started_at ? new Date(selectedInterview.started_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : selectedInterview.time || '-'}
+                  </p>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-4">
                   <div className="flex items-center gap-2 text-gray-500 text-sm mb-1">
                     <Clock size={14} />
                     Durée
                   </div>
-                  <p className="font-semibold text-gray-900">{selectedInterview.duration}</p>
+                  <p className="font-semibold text-gray-900">
+                    {/* @ts-ignore */}
+                    {selectedInterview.duration_minutes ? `${selectedInterview.duration_minutes} min` : selectedInterview.duration}
+                  </p>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-4">
                   <div className="flex items-center gap-2 text-gray-500 text-sm mb-1">
@@ -809,14 +979,14 @@ export default function UserDetailsPage() {
                     Statut
                   </div>
                   <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                    selectedInterview.status === 'scheduled' 
+                    selectedInterview.status === 'scheduled' || selectedInterview.status === 'in_progress'
                       ? 'bg-amber-100 text-amber-700' 
                       : 'bg-green-100 text-green-700'
                   }`}>
-                    {selectedInterview.status === 'scheduled' ? (
+                    {selectedInterview.status === 'scheduled' || selectedInterview.status === 'in_progress' ? (
                       <>
                         <Clock size={10} />
-                        Planifié
+                        {selectedInterview.status === 'in_progress' ? 'En cours' : 'Planifié'}
                       </>
                     ) : (
                       <>
@@ -828,49 +998,15 @@ export default function UserDetailsPage() {
                 </div>
               </div>
 
-              {/* Score si complété */}
-              {selectedInterview.score !== null && (
-                <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-medium text-gray-700">Score obtenu</span>
-                    <span className={`text-2xl font-bold ${
-                      selectedInterview.score >= 80 ? 'text-green-600' :
-                      selectedInterview.score >= 60 ? 'text-yellow-600' :
-                      'text-red-600'
-                    }`}>
-                      {selectedInterview.score}%
-                    </span>
+               {/* Description */}
+              {/* @ts-ignore */}
+              {(selectedInterview.report_data?.gpt_report || selectedInterview.description) && (
+                <div className="max-h-60 overflow-y-auto">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Rapport / Description</h4>
+                  <div className="text-gray-600 text-sm leading-relaxed bg-gray-50 rounded-xl p-4 whitespace-pre-wrap">
+                    {/* @ts-ignore */}
+                    {selectedInterview.report_data?.gpt_report || selectedInterview.description}
                   </div>
-                  <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full rounded-full transition-all duration-1000 ${
-                        selectedInterview.score >= 80 ? 'bg-gradient-to-r from-green-400 to-green-500' :
-                        selectedInterview.score >= 60 ? 'bg-gradient-to-r from-yellow-400 to-yellow-500' :
-                        'bg-gradient-to-r from-red-400 to-red-500'
-                      }`}
-                      style={{ width: `${selectedInterview.score}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Description */}
-              {selectedInterview.description && (
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Description</h4>
-                  <p className="text-gray-600 text-sm leading-relaxed bg-gray-50 rounded-xl p-4">
-                    {selectedInterview.description}
-                  </p>
-                </div>
-              )}
-
-              {/* Feedback */}
-              {selectedInterview.feedback && (
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Feedback</h4>
-                  <p className="text-gray-600 text-sm leading-relaxed bg-green-50 rounded-xl p-4 border border-green-100">
-                    {selectedInterview.feedback}
-                  </p>
                 </div>
               )}
             </div>
@@ -883,13 +1019,6 @@ export default function UserDetailsPage() {
               >
                 Fermer
               </button>
-              {selectedInterview.status === 'completed' && (
-                <button 
-                  className="px-4 py-2 text-sm font-medium text-white bg-[#0D7BFF] rounded-xl hover:bg-[#0a6ae0] transition-colors"
-                >
-                  Voir le replay
-                </button>
-              )}
             </div>
           </div>
         </div>

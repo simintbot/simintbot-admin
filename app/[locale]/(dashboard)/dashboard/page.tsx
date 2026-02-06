@@ -236,10 +236,10 @@ export default function DashboardPage() {
                 <tbody className="divide-y divide-gray-100">
                     {data.recent_activity.map((item) => (
                         <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
-                            <div className="px-6 py-4">
+                            <td className="px-6 py-4">
                                 <div className="font-medium text-gray-900">{item.user_name}</div>
                                 <div className="text-xs text-gray-500">{item.user_email}</div>
-                            </div>
+                            </td>
                             <td className="px-6 py-4 capitalize text-gray-600">
                                 {item.type}
                             </td>

@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { User, LogOut, Menu, Settings } from 'lucide-react';
 import { Link, useRouter, usePathname } from '@/i18n/routing';
 import { useMobileSidebar } from './MobileSidebarContext';
+import { userService, User as AppUser } from '@/lib/services/user.service';
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -48,6 +49,7 @@ function ConfirmationModal({ isOpen, onClose, onConfirm, title, message, cancelT
 export default function Navbar() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
@@ -63,6 +65,20 @@ export default function Navbar() {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
+  }, []);
+
+  useEffect(() => {
+    const fetchMe = async () => {
+      try {
+        const res = await userService.getCurrentUser();
+        if (res.data) {
+          setCurrentUser(res.data);
+        }
+      } catch (err) {
+        console.error("Failed to load admin profile", err);
+      }
+    };
+    fetchMe();
   }, []);
 
   const handleLogoutClick = () => {
@@ -112,16 +128,24 @@ export default function Navbar() {
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                 className="flex items-center gap-2 p-1.5 hover:bg-gray-100 rounded-xl transition-colors"
               >
-                <div className="w-9 h-9 rounded-full bg-[#0D7BFF] flex items-center justify-center text-white font-bold text-sm">
-                  A
+                <div className="w-9 h-9 rounded-full bg-[#0D7BFF] flex items-center justify-center text-white font-bold text-sm overflow-hidden">
+                    {currentUser?.profile_picture_url && currentUser.profile_picture_url !== "string" ? (
+                        <img src={currentUser.profile_picture_url} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                        <span>
+                          {currentUser ? (currentUser.first_name?.[0] || '') + (currentUser.last_name?.[0] || '') || 'A' : 'A'}
+                        </span>
+                    )}
                 </div>
               </button>
 
               {isProfileOpen && (
                 <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
                   <div className="px-4 py-2 border-b border-gray-100">
-                    <p className="font-semibold text-sm text-gray-800">Administrateur</p>
-                    <p className="text-xs text-gray-400">admin@simintbot.com</p>
+                    <p className="font-semibold text-sm text-gray-800">
+                        {currentUser ? `${currentUser.first_name} ${currentUser.last_name}` : 'Administrateur'}
+                    </p>
+                    <p className="text-xs text-gray-400">{currentUser?.email || 'admin@simintbot.com'}</p>
                   </div>
                   <Link 
                     href="/settings/general"
