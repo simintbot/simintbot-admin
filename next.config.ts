@@ -6,10 +6,16 @@ const withNextIntl = createNextIntlPlugin();
 const nextConfig: NextConfig = {
   output: "standalone",
   async rewrites() {
-    // API_URL doit être définie au niveau du serveur (ex: docker-compose)
-    // Elle ne doit PAS être /api/proxy (qui est l'URL publique)
-    const apiUrl = process.env.API_URL || 'http://localhost:8000/api/v1';
-    console.log('Proxy configuring to:', apiUrl);
+    // Fallback intelligent si API_URL n'est pas définie
+    const isProd = process.env.NODE_ENV === 'production';
+    const defaultUrl = isProd 
+      ? 'https://api.simint-bot.com/api/v1' 
+      : 'https://devapi.simint-bot.com/api/v1';
+      
+    const apiUrl = process.env.API_URL || defaultUrl;
+    
+    console.log(`[NextConfig] Proxy configuring to: ${apiUrl} (Env: ${process.env.NODE_ENV})`);
+    
     return [
       {
         source: '/api/proxy/:path*',
