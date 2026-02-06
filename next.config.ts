@@ -6,7 +6,9 @@ const withNextIntl = createNextIntlPlugin();
 const nextConfig: NextConfig = {
   output: "standalone",
   async rewrites() {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+    // API_URL doit être définie au niveau du serveur (ex: docker-compose)
+    // Elle ne doit PAS être /api/proxy (qui est l'URL publique)
+    const apiUrl = process.env.API_URL || 'http://localhost:8000/api/v1';
     console.log('Proxy configuring to:', apiUrl);
     return [
       {
