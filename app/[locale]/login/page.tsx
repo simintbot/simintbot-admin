@@ -175,7 +175,7 @@ export default function LoginPage() {
               disabled={isLoading}
               className="text-[#0D7BFF] text-sm hover:underline"
             >
-              Obtenir les accès admin ?
+              Envoyez la réinitialisation du mot de passe.
             </button>
           </div>
         </div>
