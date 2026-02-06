@@ -10,4 +10,5 @@ services:
       - "3003:3000"
     restart: always
     env_file:
+      - .env
       - .env.local
