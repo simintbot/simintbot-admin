@@ -59,11 +59,17 @@ async function proxyRequest(request: NextRequest, method: string, params: { path
     // Lecture de la réponse
     const responseBody = await response.blob(); 
     
+    // Nettoyage des headers de réponse
+    const responseHeaders = new Headers(response.headers);
+    responseHeaders.delete('content-encoding');
+    responseHeaders.delete('content-length');
+    responseHeaders.delete('transfer-encoding');
+    
     // Création de la réponse Proxy
     const proxyResponse = new NextResponse(responseBody, {
       status: response.status,
       statusText: response.statusText,
-      headers: response.headers
+      headers: responseHeaders
     });
 
     // Nettoyage des headers de réponse si nécessaire (CORS, etc géré par Next.js généralement)
