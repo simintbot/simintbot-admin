@@ -15,6 +15,7 @@ export const metadata: Metadata = {
   description: "Administration panel",
   icons: {
     icon: "/icon.png",
+    apple: "/icon.png",
   },
 };
 
